@@ -17,7 +17,6 @@ import Profile from "./Profile";
 import PublicKeySetup from "./PublicKeySetup";
 import AdminDashboard from "./AdminDashboard";
 import SuperAdminDashboard from "./SuperAdminDashboard";
-import InsuranceDashboard from "./InsuranceDashboard";
 import ProfessionalDashboard from "./ProfessionalDashboard"; // NEW Unified Import
 // --- FIX ---
 // Import the new component that will be displayed to revoked users.
@@ -99,8 +98,6 @@ export default function Dashboard() {
                 case 'LabTechnician':
                     // Route both professional roles to the unified component, passing the role in lowercase
                     return <ProfessionalDashboard role={userProfile.role.toLowerCase()} />;
-                case 'Insurance': 
-                    return <InsuranceDashboard />; 
                 case 'SuperAdmin':
                     return <SuperAdminDashboard />;
                 case 'Patient':
