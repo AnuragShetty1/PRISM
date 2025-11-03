@@ -33,7 +33,7 @@ export default function Notifications({ close }) {
                     <div className="text-center p-8 text-slate-500">
                         <BellIcon />
                         <p className="mt-2 font-semibold">No new notifications</p>
-                        <p className="text-sm">We'll let you know when something important happens.</p>
+                        <p className="text-sm">We will let you know when something important happens.</p>
                     </div>
                 ) : (
                     <ul>

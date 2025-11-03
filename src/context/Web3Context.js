@@ -39,8 +39,11 @@ const web3auth = new Web3Auth({
   chainConfig: productionChainConfig,
 });
 
-// [MODIFIED] This will be updated later to use environment variable
-const API_BASE_URL = 'http://localhost:3001';
+// --- [MODIFIED FOR PRODUCTION (STEP 1)] ---
+// Replaced hardcoded 'http://localhost:3001' with the environment variable from the plan.
+// Added a fallback to 'http://localhost:3001' so local development doesn't break.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+// --- [END OF MODIFICATION] ---
 
 export const Web3Provider = ({ children }) => {
     // Core Web3 State
@@ -286,11 +289,14 @@ export const Web3Provider = ({ children }) => {
 
     const setupUserSession = useCallback(async (signerInstance, userAddress) => {
         try {
-            // [MODIFIED] Get address from environment variable
-            const address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+            // --- [MODIFIED FOR PRODUCTION (STEP 2)] ---
+            // Changed variable from NEXT_PUBLIC_CONTRACT_ADDRESS to NEXT_PUBLIC_CONTRACT_ADDRESS_AMOY
+            // to match the deployment plan and .env.local file.
+            const address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_AMOY;
             if (!address) {
-                throw new Error("Contract address not found in environment. Please set NEXT_PUBLIC_CONTRACT_ADDRESS.");
+                throw new Error("Contract address not found in environment. Please set NEXT_PUBLIC_CONTRACT_ADDRESS_AMOY.");
             }
+            // --- [END OF MODIFICATION] ---
             
             const abi = medicalRecordsArtifact.abi;
             const contractInstance = new ethers.Contract(address, abi, signerInstance);
@@ -692,7 +698,6 @@ export const Web3Provider = ({ children }) => {
                 contract.off('ProfessionalAccessRequested', handleProfessionalAccessRequested);
             };
         }
-        // [FIX] We can remove userProfile from the dependency array as it's not needed for the new logic
     }, [contract, account, signer, fetchPatientData, checkUserRegistrationAndState, refetchUserProfile]);
 
 

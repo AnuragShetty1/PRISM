@@ -201,7 +201,7 @@ const AccessCard = ({ grant, isRevoking, onRevoke, onCopy, customIndex }) => {
                     </div>
 
                     <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <label className="text-xs font-medium text-gray-500">Professional's Address</label>
+                        <label className="text-xs font-medium text-gray-500">Professionals Address</label>
                         <div className="flex items-center justify-between gap-2 mt-1">
                             <p className="font-mono text-sm text-gray-700 truncate">{grant.professionalAddress}</p>
                             <button
@@ -249,7 +249,7 @@ const EmptyState = () => (
         <Users className="h-16 w-16 text-gray-400" />
         <h3 className="mt-4 text-xl font-bold text-gray-900">No Active Permissions</h3>
         <p className="mt-2 text-gray-600">
-            You haven't shared your records with any professionals yet.
+            You havent shared your records with any professionals yet.
         </p>
     </motion.div>
 );

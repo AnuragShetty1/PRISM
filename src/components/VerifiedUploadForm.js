@@ -284,7 +284,7 @@ export default function VerifiedUploadForm({ patientProfile, onUploadSuccess, al
                         placeholder="e.g., Q1 Lab Tests"
                         className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 ${ringClass} transition`}
                     />
-                    <p className="mt-1.5 text-xs text-gray-500">This title will be pre-pended to each filename (e.g., "Q1 Lab Tests - results.pdf").</p>
+                    <p className="mt-1.5 text-xs text-gray-500">This title will be pre-pended to each filename (e.g., Q1 Lab Tests - results.pdf).</p>
                 </div>
                 
                 <div>

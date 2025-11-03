@@ -239,7 +239,7 @@ const EmptyState = () => (
         <MailOpen className="h-16 w-16 text-gray-400" />
         <h3 className="mt-4 text-xl font-bold text-gray-900">No Pending Requests</h3>
         <p className="mt-2 text-gray-600">
-            You're all caught up!
+            You are all caught up!
         </p>
     </motion.div>
 );

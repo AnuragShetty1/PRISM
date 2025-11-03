@@ -556,7 +556,7 @@ function SponsorManagementSection({ sponsorAddress, setSponsorAddress, isSponsor
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-2xl mx-auto">
             <h3 className="text-2xl font-semibold text-gray-900">Sponsor Wallet Management</h3>
             <p className="text-sm text-gray-600 mt-2 mb-6">
-                Authorize or revoke a wallet address to act as a "Sponsor" (i.e., pay gas fees) for user transactions. This is a high-privilege action.
+                Authorize or revoke a wallet address to act as a Sponsor (i.e., pay gas fees) for user transactions. This is a high-privilege action.
             </p>
             <div className="space-y-4">
                 <div>

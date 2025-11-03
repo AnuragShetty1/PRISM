@@ -229,7 +229,7 @@ export default function UploadForm() {
                         placeholder="e.g., Annual Checkup"
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     />
-                    <p className="mt-1.5 text-xs text-gray-500">e.g., "Annual Checkup". This title will be pre-pended to each filename (e.g., "Annual Checkup - results.pdf").</p>
+                    <p className="mt-1.5 text-xs text-gray-500">e.g., Annual Checkup. This title will be pre-pended to each filename (e.g., Annual Checkup - results.pdf).</p>
                 </div>
                 <div>
                     <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1.5">Category (for all files)</label>
@@ -241,7 +241,7 @@ export default function UploadForm() {
                     >
                         <option value="lab-result">Lab Result</option>
                         <option value="prescription">Prescription</option>
-                        <option value="doctor-note">Doctor's Note</option>
+                        <option value="doctor-note">Doctors Note</option>
                         <option value="insurance-claim">Insurance Claim</option>
                         <option value="other">Other</option>
                     </select>

@@ -106,7 +106,7 @@ export default function Dashboard() {
                 case 'Patient':
                     return <PatientDashboard />;
                 default:
-                    return <div className="text-center p-10"><p>Dashboard for role "{userProfile.role}" is not yet available.</p></div>;
+                    return <div className="text-center p-10"><p>Dashboard for role {userProfile.role} is not yet available.</p></div>;
             }
         
         default:

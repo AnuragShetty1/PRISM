@@ -235,7 +235,7 @@ export default function AccessManager({
                                             {/* --- REFACTORED: Grantee Address Input --- */}
                                             <div>
                                                 <label htmlFor="granteeAddress" className="block text-sm font-semibold text-gray-700 mb-2">
-                                                    Professional's Wallet Address
+                                                    Professionals Wallet Address
                                                 </label>
                                                 <div className="relative">
                                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />

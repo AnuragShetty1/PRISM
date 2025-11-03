@@ -19,7 +19,7 @@ export default function AccessRevoked() {
                 </div>
                 <h1 className="text-2xl font-bold text-slate-800 mb-2">Access Revoked</h1>
                 <p className="text-slate-600 mb-8">
-                    Your access to the platform has been revoked by an administrator. If you believe this is an error, please contact your institution's administration.
+                    Your access to the platform has been revoked by an administrator. If you believe this is an error, please contact your institutions administration.
                 </p>
                 <button
                     onClick={disconnect}
