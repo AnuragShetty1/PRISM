@@ -26,23 +26,23 @@ const prodOrigin = process.env.FRONTEND_URL;
 const devOrigin = 'http://localhost:3000';
 
 if (!prodOrigin) {
-    logger.warn(`FRONTEND_URL environment variable is not set.`);
-    logger.warn(`Defaulting to ${devOrigin} for development.`);
-    logger.warn(`Set this variable in backend/.env for production deployment.`);
+    logger.warn(`FRONTEND_URL environment variable is not set.`);
+    logger.warn(`Defaulting to ${devOrigin} for development.`);
+    logger.warn(`Set this variable in backend/.env for production deployment.`);
 }
 
 const corsOptions = {
-    // --- MODIFIED: Allow both production and development origins ---
-    origin: [prodOrigin, devOrigin].filter(Boolean), // .filter(Boolean) removes undefined prodOrigin if not set
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Explicitly allow POST
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allow these specific headers
+    // --- MODIFIED: Allow both production and development origins ---
+    origin: [prodOrigin, devOrigin].filter(Boolean), // .filter(Boolean) removes undefined prodOrigin if not set
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Explicitly allow POST
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow these specific headers
 };
 app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- Basic Health Check Route ---
 app.get('/', (req, res) => {
-    res.status(200).json({ status: 'ok', message: 'Backend server is running.' });
+    res.status(200).json({ status: 'ok', message: 'Backend server is running.' });
 });
 
 // --- API Routes ---
@@ -57,35 +57,30 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws) => {
-    logger.info('Client connected via WebSocket');
-    ws.on('close', () => {
-        logger.info('Client disconnected from WebSocket');
-    });
+    logger.info('Client connected via WebSocket');
+    ws.on('close', () => {
+        logger.info('Client disconnected from WebSocket');
+    });
 });
 
 
 const startServer = async () => {
-    try {
-        // --- Connect to MongoDB ---
-        logger.info('Connecting to MongoDB...');
-        await mongoose.connect(config.mongoURI);
-        logger.info('MongoDB connected successfully.');
+    try {
+        // --- Connect to MongoDB ---
+        logger.info('Connecting to MongoDB...');
+        await mongoose.connect(config.mongoURI);
+        logger.info('MongoDB connected successfully.');
 
-listen(config.port, () => {
-            logger.info(`Server is running on port ${config.port}`);
-        });
+        server.listen(config.port, () => {
+            logger.info(`Server is running on port ${config.port}`);
+        });
 
-        // --- MODIFIED: [DEPLOYMENT FIX] ---
-        // The indexer is now run as a separate "Background Worker" service on Render.
-        // This "Web Service" should only be responsible for the API.
-        // We comment this out to prevent the API server from sleeping and stopping the indexer.
-        // startIndexer(wss);
+        startIndexer(wss);
 
-    } catch (error) {
-        logger.error('Failed to start the server:', error);
-        process.exit(1);
-   }
+    } catch (error) {
+        logger.error('Failed to start the server:', error);
+        process.exit(1);
+    }
 };
 
 startServer();
-
