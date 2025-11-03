@@ -72,6 +72,9 @@ export default function RegistrationForm() {
     // --- MERGE: Added refetchUserProfile ---
     const { account, checkUserRegistration, userStatus, api, refetchUserProfile } = useWeb3();
     
+    // --- FIX: ADD API_BASE_URL TO FIX HARDCODED LOCALHOST ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     const [step, setStep] = useState(1); 
     
     // State for User/Professional Registration
@@ -96,6 +99,36 @@ export default function RegistrationForm() {
         confirmText: '',
         confirmColor: 'bg-indigo-600',
     });
+
+    // --- FIX: MOVED HOOKS BEFORE EARLY RETURN ---
+    // Fetch existing hospitals (for professionals to select)
+    useEffect(() => {
+        const fetchHospitals = async () => {
+            try {
+                // --- FIX: Replaced hardcoded localhost ---
+                const response = await fetch(`${API_BASE_URL}/api/super-admin/hospitals`);
+                if (!response.ok) throw new Error('Failed to fetch hospitals');
+                const data = await response.json();
+                setHospitals(data.data || []);
+            } catch (error) {
+                console.error("Error fetching hospitals:", error);
+                toast.error("Could not load hospital list.");
+            }
+        };
+        fetchHospitals();
+    }, [API_BASE_URL]); // Added API_BASE_URL as dependency
+
+    // Dropdown click outside logic
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (hospitalDropdownRef.current && !hospitalDropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+    // --- END OF MOVED HOOKS ---
 
     // --- SHARED MODAL LOGIC ---
     const closeModal = () => {
@@ -154,37 +187,11 @@ export default function RegistrationForm() {
         });
     };
 
-    
+    // --- THIS IS THE EARLY RETURN THAT CAUSED THE ERROR ---
     if (userStatus === 'pending_hospital' || userStatus === 'rejected') {
         return <HospitalRequestPending />;
     }
-
-    // Fetch existing hospitals (for professionals to select)
-    useEffect(() => {
-        const fetchHospitals = async () => {
-            try {
-                const response = await fetch('http://localhost:3001/api/super-admin/hospitals');
-                if (!response.ok) throw new Error('Failed to fetch hospitals');
-                const data = await response.json();
-                setHospitals(data.data || []);
-            } catch (error) {
-                console.error("Error fetching hospitals:", error);
-                toast.error("Could not load hospital list.");
-            }
-        };
-        fetchHospitals();
-    }, []);
-
-    // Dropdown click outside logic
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (hospitalDropdownRef.current && !hospitalDropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    // --- THE HOOKS ARE NO LONGER BELOW THIS LINE ---
 
     // --- USER/PROFESSIONAL SUBMIT LOGIC ---
     const confirmUserSubmit = async () => {
@@ -210,7 +217,8 @@ export default function RegistrationForm() {
                     throw new Error("Selected role is invalid.");
                 }
 
-                const response = await fetch('http://localhost:3001/api/users/request-association', {
+                // --- FIX: Replaced hardcoded localhost ---
+                const response = await fetch(`${API_BASE_URL}/api/users/request-association`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -237,7 +245,8 @@ export default function RegistrationForm() {
                 toast.success('On-chain identity created!', { id: toastId });
 
                 toast.loading('Step 2/2: Setting up your account...', { id: toastId });
-                const response = await fetch('http://localhost:3001/api/users/register-patient', {
+                // --- FIX: Replaced hardcoded localhost ---
+                const response = await fetch(`${API_BASE_URL}/api/users/register-patient`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
