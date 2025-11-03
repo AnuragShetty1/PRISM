@@ -1,0 +1,505 @@
+{
+  "manifestVersion": "3.2",
+  "proxies": [
+    {
+      "address": "0x7B1da92103812b68CBa3c7E756376D665f381E0D",
+      "txHash": "0xbca758c03b3db611d6861b0a59ac977198cdd5579e85b4ca52b097ec4b9cc7c9",
+      "kind": "uups"
+    }
+  ],
+  "impls": {
+    "3e7c6b52de1807ec095e10f2c4bafb5c325d53648f13c613b74ae359e99382a0": {
+      "address": "0x6Ce893380Fb54A606Af9F8458FFcFe94c124E670",
+      "txHash": "0x75d31fd46bc06334798d406e045ae1ac1cd79b8f8eec82cfd72d8a0621c90d1c",
+      "layout": {
+        "solcVersion": "0.8.24",
+        "storage": [
+          {
+            "label": "users",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_address,t_struct(User)3796_storage)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:72"
+          },
+          {
+            "label": "userProfiles",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_address,t_struct(UserProfile)3803_storage)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:73"
+          },
+          {
+            "label": "records",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_array(t_struct(Record)3824_storage)dyn_storage",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:76"
+          },
+          {
+            "label": "patientRecordIds",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:77"
+          },
+          {
+            "label": "recordAccess",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:78"
+          },
+          {
+            "label": "patientRequests",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_address,t_array(t_struct(AccessRequest)3840_storage)dyn_storage)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:81"
+          },
+          {
+            "label": "_nextRequestId",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_uint256",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:82"
+          },
+          {
+            "label": "hospitals",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_uint256,t_struct(Hospital)3849_storage)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:85"
+          },
+          {
+            "label": "hospitalIdCounter",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_uint256",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:86"
+          },
+          {
+            "label": "registrationRequests",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_mapping(t_uint256,t_struct(RegistrationRequest)3859_storage)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:87"
+          },
+          {
+            "label": "userToHospital",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:88"
+          },
+          {
+            "label": "professionalToHospitalId",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:90"
+          },
+          {
+            "label": "isSponsor",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "Storage",
+            "src": "contracts\\Storage.sol:93"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_struct(AccessRequest)3840_storage)dyn_storage": {
+            "label": "struct Storage.AccessRequest[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(Record)3824_storage)dyn_storage": {
+            "label": "struct Storage.Record[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_enum(RequestStatus)3828": {
+            "label": "enum Storage.RequestStatus",
+            "members": [
+              "Pending",
+              "Approved",
+              "Rejected"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(Role)3784": {
+            "label": "enum Storage.Role",
+            "members": [
+              "Patient",
+              "Doctor",
+              "HospitalAdmin",
+              "InsuranceProvider",
+              "Pharmacist",
+              "Researcher",
+              "Guardian",
+              "LabTechnician",
+              "SuperAdmin"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_struct(AccessRequest)3840_storage)dyn_storage)": {
+            "label": "mapping(address => struct Storage.AccessRequest[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(User)3796_storage)": {
+            "label": "mapping(address => struct Storage.User)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(UserProfile)3803_storage)": {
+            "label": "mapping(address => struct Storage.UserProfile)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Hospital)3849_storage)": {
+            "label": "mapping(uint256 => struct Storage.Hospital)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(RegistrationRequest)3859_storage)": {
+            "label": "mapping(uint256 => struct Storage.RegistrationRequest)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(AccessRequest)3840_storage": {
+            "label": "struct Storage.AccessRequest",
+            "members": [
+              {
+                "label": "id",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "patient",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "provider",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "claimId",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "status",
+                "type": "t_enum(RequestStatus)3828",
+                "offset": 0,
+                "slot": "4"
+              }
+            ],
+            "numberOfBytes": "160"
+          },
+          "t_struct(Hospital)3849_storage": {
+            "label": "struct Storage.Hospital",
+            "members": [
+              {
+                "label": "hospitalId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "name",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "adminAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "isVerified",
+                "type": "t_bool",
+                "offset": 20,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(Record)3824_storage": {
+            "label": "struct Storage.Record",
+            "members": [
+              {
+                "label": "id",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "title",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "ipfsHash",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "timestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "uploadedBy",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "isVerified",
+                "type": "t_bool",
+                "offset": 20,
+                "slot": "5"
+              },
+              {
+                "label": "category",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "encryptedKeyForPatient",
+                "type": "t_bytes_storage",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "encryptedKeyForHospital",
+                "type": "t_bytes_storage",
+                "offset": 0,
+                "slot": "8"
+              }
+            ],
+            "numberOfBytes": "288"
+          },
+          "t_struct(RegistrationRequest)3859_storage": {
+            "label": "struct Storage.RegistrationRequest",
+            "members": [
+              {
+                "label": "hospitalId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "name",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "requesterAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "status",
+                "type": "t_enum(RequestStatus)3828",
+                "offset": 20,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(User)3796_storage": {
+            "label": "struct Storage.User",
+            "members": [
+              {
+                "label": "walletAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "name",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "role",
+                "type": "t_enum(Role)3784",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "isVerified",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "2"
+              },
+              {
+                "label": "publicKey",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_struct(UserProfile)3803_storage": {
+            "label": "struct Storage.UserProfile",
+            "members": [
+              {
+                "label": "name",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "contactInfo",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "profileMetadataURI",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

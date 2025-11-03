@@ -62,22 +62,26 @@ const init = () => {
     return;
   }
   try {
-    // [MODIFIED] Check for *both* keys
-    if (!process.env.SUPER_ADMIN_PRIVATE_KEY) {
+    // --- [MODIFIED (Step 7)] ---
+    // Read keys from the 'config' object instead of 'process.env'
+    // This ensures we use the variables loaded by config/index.js
+    if (!config.superAdminPrivateKey) {
       throw new Error('SUPER_ADMIN_PRIVATE_KEY is not set in the .env file. Cannot sign admin transactions.');
     }
-    if (!process.env.SPONSOR_WALLET_PRIVATE_KEY) {
-      throw new Error('SPONSOR_WALLET_PRIVATE_KEY is not set in the .env file. Cannot sign sponsored transactions.');
+    if (!config.sponsorPrivateKey) {
+      throw new Error('SPONSOR_PRIVATE_KEY is not set in the .env file. Cannot sign sponsored transactions.');
     }
 
     const provider = new ethers.JsonRpcProvider(config.providerUrl);
     
     // [NEW] Setup Admin Signer (for verifying hospitals, etc.)
-    adminSigner = new ethers.Wallet(process.env.SUPER_ADMIN_PRIVATE_KEY, provider);
+    // --- [MODIFIED (Step 7)] ---
+    adminSigner = new ethers.Wallet(config.superAdminPrivateKey, provider);
     adminContract = new ethers.Contract(config.contractAddress, MedicalRecordsABI, adminSigner);
     
     // [NEW] Setup Sponsor Signer (for all user-facing transactions)
-    sponsorSigner = new ethers.Wallet(process.env.SPONSOR_WALLET_PRIVATE_KEY, provider);
+    // --- [MODIFIED (Step 7)] ---
+    sponsorSigner = new ethers.Wallet(config.sponsorPrivateKey, provider);
     sponsorContract = new ethers.Contract(config.contractAddress, MedicalRecordsABI, sponsorSigner);
 
     logger.info(`Ethers service initialized.`);
@@ -367,7 +371,7 @@ const approveRequest = async (patientAddress, requestId, durationInDays) => {
 /**
  * @dev Submits a record access request from a professional, sponsored by the backend.
  * @param {string} professionalAddress The professional's wallet address.
- * @param {string} patientAddress The patient's wallet address.
+ * @param {string} patientAddress The patient's wallet address..
  * @param {Array<string|number>} recordIds Array of record IDs being requested.
  */
 const requestRecordAccess = async (professionalAddress, patientAddress, recordIds) => {
@@ -499,4 +503,3 @@ module.exports = {
   addSelfUploadedRecordsBatch,
   addVerifiedRecordsBatch,
 };
-

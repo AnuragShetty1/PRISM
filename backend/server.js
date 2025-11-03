@@ -18,10 +18,24 @@ const hospitalAdminRoutes = require('./src/api/routes/hospitalAdmin');
 const app = express();
 
 // --- Middlewares ---
+
+// --- MODIFIED: Prepare for Production CORS (Step 6) ---
+// We read the production frontend URL from the environment variables.
+// You MUST add FRONTEND_URL="https"//your-app-name.vercel.app" to your backend/.env file for production.
+const prodOrigin = process.env.FRONTEND_URL;
+const devOrigin = 'http://localhost:3000';
+
+if (!prodOrigin) {
+    logger.warn(`FRONTEND_URL environment variable is not set.`);
+    logger.warn(`Defaulting to ${devOrigin} for development.`);
+    logger.warn(`Set this variable in backend/.env for production deployment.`);
+}
+
 const corsOptions = {
-  origin: 'http://localhost:3000', // Allow requests from your frontend
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Explicitly allow POST
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these specific headers
+    // --- MODIFIED: Allow both production and development origins ---
+    origin: [prodOrigin, devOrigin].filter(Boolean), // .filter(Boolean) removes undefined prodOrigin if not set
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Explicitly allow POST
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow these specific headers
 };
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -70,4 +84,3 @@ const startServer = async () => {
 };
 
 startServer();
-

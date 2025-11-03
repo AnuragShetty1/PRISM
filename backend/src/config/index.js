@@ -13,11 +13,14 @@ const config = {
     jwtSecret: process.env.JWT_SECRET,
     providerUrl: process.env.PROVIDER_URL,
     contractAddress: process.env.CONTRACT_ADDRESS,
-    superAdminPrivateKey: process.env.SUPER_ADMIN_PRIVATE_KEY
+    superAdminPrivateKey: process.env.SUPER_ADMIN_PRIVATE_KEY,
+    // --- ADDED: Load the Sponsor private key ---
+    sponsorPrivateKey: process.env.SPONSOR_PRIVATE_KEY
 };
 
 // Validate essential configuration
-if (!config.mongoURI || !config.providerUrl || !config.contractAddress) {
+// --- MODIFIED: Added sponsorPrivateKey to the validation ---
+if (!config.mongoURI || !config.providerUrl || !config.contractAddress || !config.superAdminPrivateKey || !config.sponsorPrivateKey) {
     console.error("FATAL ERROR: Missing required environment variables. Please check your .env file.");
     if (process.env.NODE_ENV !== 'test') {
         process.exit(1);
