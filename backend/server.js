@@ -71,8 +71,7 @@ const startServer = async () => {
         await mongoose.connect(config.mongoURI);
         logger.info('MongoDB connected successfully.');
 
-        // --- FIX: Corrected missing 'server' object ---
-        server.listen(config.port, () => {
+listen(config.port, () => {
             logger.info(`Server is running on port ${config.port}`);
         });
 
@@ -80,12 +79,12 @@ const startServer = async () => {
         // The indexer is now run as a separate "Background Worker" service on Render.
         // This "Web Service" should only be responsible for the API.
         // We comment this out to prevent the API server from sleeping and stopping the indexer.
-       // startIndexer(wss);
+        // startIndexer(wss);
 
     } catch (error) {
         logger.error('Failed to start the server:', error);
         process.exit(1);
-    } // --- FIX: Removed stray '.' ---
+   }
 };
 
 startServer();
