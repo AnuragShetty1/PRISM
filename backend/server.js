@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
-const { WebSocketServer } = require('ws'); 
+const { WebSocketServer } = require('ws');
 
 const config = require('./src/config');
 const logger = require('./src/utils/logger');
@@ -82,7 +82,12 @@ const startServer = async () => {
 
         // This correctly starts the indexer in the same process
         startIndexer(wss);
-
+        const selfPingUrl = process.env.RENDER_EXTERNAL_URL || 'https://prism-backend-api.onrender.com';
+        setInterval(() => {
+            fetch(`${selfPingUrl}/health`)
+                .then(() => logger.debug('Self-ping OK'))
+                .catch(() => logger.warn('Self-ping failed — ignoring'));
+        }, 60 * 1000); // every 1 minute
     } catch (error) {
         logger.error('Failed to start the server:', error);
         process.exit(1);
