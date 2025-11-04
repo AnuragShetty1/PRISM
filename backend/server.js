@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') }); // --- [THE FIX] --- This line MUST be first to load environment variables.
+// --- REMOVED: 'dotenv' loading. This is handled by the Render environment. ---
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -19,16 +19,15 @@ const app = express();
 
 // --- Middlewares ---
 
-// --- MODIFIED: Prepare for Production CORS (Step 6) ---
-// We read the production frontend URL from the environment variables.
-// You MUST add FRONTEND_URL="https"//your-app-name.vercel.app" to your backend/.env file for production.
-const prodOrigin = process.env.FRONTEND_URL;
+// --- MODIFIED: Use frontendUrl from config.js ---
+// This now reads the URL from our centralized config file.
+const prodOrigin = config.frontendUrl; // Use config
 const devOrigin = 'http://localhost:3000';
 
 if (!prodOrigin) {
     logger.warn(`FRONTEND_URL environment variable is not set.`);
     logger.warn(`Defaulting to ${devOrigin} for development.`);
-    logger.warn(`Set this variable in backend/.env for production deployment.`);
+    logger.warn(`Set this variable in the Render environment for production deployment.`);
 }
 
 const corsOptions = {
@@ -43,6 +42,12 @@ app.use(express.json());
 // --- Basic Health Check Route ---
 app.get('/', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Backend server is running.' });
+});
+
+// --- ADDED: Dedicated health check for Uptime Robot ---
+// This route will be pinged every 5 minutes to keep the server alive.
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'UP' });
 });
 
 // --- API Routes ---
@@ -75,6 +80,7 @@ const startServer = async () => {
             logger.info(`Server is running on port ${config.port}`);
         });
 
+        // This correctly starts the indexer in the same process
         startIndexer(wss);
 
     } catch (error) {
@@ -84,3 +90,4 @@ const startServer = async () => {
 };
 
 startServer();
+
