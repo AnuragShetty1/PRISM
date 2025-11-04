@@ -38,7 +38,7 @@ const CATEGORIES_MAP = {
     'lab-result': 'Lab Results',
     'prescription': 'Prescriptions',
     'doctor-note': 'Doctor Notes',
-    'insurance-claim': 'Insurance',
+    'insurance-claim': 'Insurance', 
     'blood-test': 'Blood Test',
     'urinalysis': 'Urinalysis',
     'imaging-report': 'Imaging Report',
@@ -190,6 +190,9 @@ const PatientSearchColumn = ({ onPatientSelect }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchMessage, setSearchMessage] = useState('Start typing to find a patient...');
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     // Custom debounce implementation adopted from DoctorView.js
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -213,7 +216,8 @@ const PatientSearchColumn = ({ onPatientSelect }) => {
             setSearchMessage('');
             try {
                 // Note: The original implementation used axios, which is preserved.
-                const response = await axios.get(`http://localhost:3001/api/users/search-patients?q=${debouncedQuery}`);
+                // --- MODIFICATION: Use API_BASE_URL ---
+                const response = await axios.get(`${API_BASE_URL}/api/users/search-patients?q=${debouncedQuery}`);
                 if (response.data.success) {
                     setSearchResults(response.data.data);
                     if (response.data.data.length === 0) {
@@ -228,7 +232,7 @@ const PatientSearchColumn = ({ onPatientSelect }) => {
             }
         };
         searchPatients();
-    }, [debouncedQuery]);
+    }, [debouncedQuery, API_BASE_URL]); // --- MODIFICATION: Add API_BASE_URL dependency ---
 
     return (
         <div className="border border-gray-200 rounded-lg bg-gray-50/50 p-4 h-full min-h-[400px] lg:min-h-[500px]">
@@ -340,6 +344,9 @@ const RequestAccessSection = ({ config }) => {
 
     const { themeColor, themeAccents } = config;
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     const filteredAndSortedRecords = useMemo(() => {
         let processedRecords = [...patientRecords];
 
@@ -372,7 +379,8 @@ const RequestAccessSection = ({ config }) => {
             setIsLoadingRecords(true);
             setPatientRecords([]);
             try {
-                const response = await axios.get(`http://localhost:3001/api/users/records/patient/${patientProfile.address}`);
+                // --- MODIFICATION: Use API_BASE_URL ---
+                const response = await axios.get(`${API_BASE_URL}/api/users/records/patient/${patientProfile.address}`);
                 setPatientRecords(response.data.data);
             } catch (error) {
                 toast.error(error.response?.data?.message || "Could not fetch patient's records.");
@@ -381,7 +389,7 @@ const RequestAccessSection = ({ config }) => {
             }
         };
         fetchPatientRecords();
-    }, [patientProfile]);
+    }, [patientProfile, API_BASE_URL]); // --- MODIFICATION: Add API_BASE_URL dependency ---
 
     const handleRecordSelect = (recordId) => {
         setSelectedRecords(prev => {
@@ -517,11 +525,11 @@ const RequestAccessSection = ({ config }) => {
                                                 <label
                                                     key={record.recordId}
                                                     className={`flex items-center p-3.5 rounded-lg border cursor-pointer transition-colors
-                                                 ${isSelected
+                                                ${isSelected
                                                             ? `${selectedAccentClass} ${borderAccentClass}`
                                                             : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                                                         }
-                                                  `}
+                                              `}
                                                 >
                                                     <input
                                                         type="checkbox"
@@ -585,6 +593,9 @@ const ReviewSection = () => {
     const [patientGroups, setPatientGroups] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     const fetchSharedRecords = useCallback(async () => {
         if (!account) {
             setIsLoading(false);
@@ -592,7 +603,8 @@ const ReviewSection = () => {
         }
         setIsLoading(true);
         try {
-            const response = await axios.get(`http://localhost:3001/api/users/records/professional/${account}`);
+            // --- MODIFICATION: Use API_BASE_URL ---
+            const response = await axios.get(`${API_BASE_URL}/api/users/records/professional/${account}`);
             if (response.data.success) {
                 // Sorting for consistent display
                 const sortedGroups = response.data.data.sort((a, b) => 
@@ -610,7 +622,7 @@ const ReviewSection = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [account]);
+    }, [account, API_BASE_URL]); // --- MODIFICATION: Add API_BASE_URL dependency ---
 
     useEffect(() => {
         fetchSharedRecords();

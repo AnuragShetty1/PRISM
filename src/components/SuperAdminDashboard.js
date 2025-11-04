@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { useWeb3 } from "../context/Web3Context.js";
-import ConfirmationModal from './ConfirmationModal.js';
+// --- MODIFICATION: Use alias path ---
+import { useWeb3 } from "@/context/Web3Context";
+// --- MODIFICATION: Use alias path ---
+import ConfirmationModal from '@/components/ConfirmationModal';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -65,7 +67,10 @@ export default function SuperAdminDashboard() {
     }, [setTheme]);
 
 
-    const API_URL = 'http://localhost:3001/api/super-admin';
+    // --- MODIFICATION: Use Environment Variable for API URL ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const API_URL = `${API_BASE_URL}/api/super-admin`;
+    // --- END MODIFICATION ---
 
     // --- ALL STATE AND LOGIC FUNCTIONS (UNCHANGED) ---
     
@@ -73,6 +78,7 @@ export default function SuperAdminDashboard() {
         setActionStates(prev => ({ ...prev, [key]: state }));
     };
 
+    // --- MODIFICATION: Added API_URL to dependency array ---
     const fetchRequestsAndHospitals = useCallback(async () => {
         try {
             const requestsResponse = await axios.get(`${API_URL}/requests`);
@@ -88,7 +94,7 @@ export default function SuperAdminDashboard() {
                 setIsLoading(false);
             }
         }
-    }, [isLoading]);
+    }, [isLoading, API_URL]); // <-- Added API_URL
 
     useEffect(() => {
         fetchRequestsAndHospitals();
@@ -649,4 +655,3 @@ const ActivityLogItem = ({ log }) => {
         </div>
     );
 };
-

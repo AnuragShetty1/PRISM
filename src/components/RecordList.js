@@ -505,3 +505,4 @@ const SkeletonCard = () => (
         </div>
     </div>
 );
+

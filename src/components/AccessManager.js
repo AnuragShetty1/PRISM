@@ -1,12 +1,14 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-// CORRECTED: Using relative paths
-import { useWeb3 } from '../context/Web3Context';
+// --- MODIFICATION: Use alias paths ---
+import { useWeb3 } from '@/context/Web3Context';
 import toast from 'react-hot-toast';
 import { ethers } from 'ethers';
-import { rewrapSymmetricKey } from '../utils/crypto';
-import { fetchFromIPFS } from '../utils/ipfs';
-import ConfirmationModal from './ConfirmationModal';
+// --- MODIFICATION: Use alias paths ---
+import { rewrapSymmetricKey } from '@/utils/crypto';
+import { fetchFromIPFS } from '@/utils/ipfs';
+// --- MODIFICATION: Use alias paths ---
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, X, User, Clock, Loader2 } from 'lucide-react';
 

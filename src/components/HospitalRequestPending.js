@@ -24,6 +24,9 @@ export default function HospitalRequestPending() {
     const { userStatus, refetchUserProfile, account } = useWeb3();
     const [isResetting, setIsResetting] = useState(false);
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     useEffect(() => {
         const intervalId = setInterval(() => {
             if (userStatus === 'pending_hospital') {
@@ -48,7 +51,8 @@ export default function HospitalRequestPending() {
         setIsResetting(true);
         const toastId = toast.loading("Resetting your registration status...");
         try {
-            await axios.post('http://localhost:3001/api/users/reset-hospital-request', {
+            // --- MODIFICATION: Use API_BASE_URL ---
+            await axios.post(`${API_BASE_URL}/api/users/reset-hospital-request`, {
                 address: account 
             });
             toast.success("You can now submit a new registration request.", { id: toastId });
@@ -95,4 +99,3 @@ export default function HospitalRequestPending() {
         </div>
     );
 }
-

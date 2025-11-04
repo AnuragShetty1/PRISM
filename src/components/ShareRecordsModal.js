@@ -19,11 +19,15 @@ export default function ShareRecordsModal({ records, recordsToShare, onClose }) 
     const [selectedProfessionalAddress, setSelectedProfessionalAddress] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     // Fetch all hospitals when the modal mounts (UNCHANGED LOGIC)
     useEffect(() => {
         const fetchHospitals = async () => {
             try {
-                const response = await axios.get('http://localhost:3001/api/users/hospitals');
+                // --- MODIFICATION: Use API_BASE_URL ---
+                const response = await axios.get(`${API_BASE_URL}/api/users/hospitals`);
                 if (response.data.success) {
                     setHospitals(response.data.data);
                 }
@@ -33,7 +37,7 @@ export default function ShareRecordsModal({ records, recordsToShare, onClose }) 
             }
         };
         fetchHospitals();
-    }, []);
+    }, [API_BASE_URL]); // --- MODIFICATION: Add API_BASE_URL dependency ---
 
     // Fetch professionals when a hospital is selected (UNCHANGED LOGIC)
     useEffect(() => {
@@ -44,7 +48,8 @@ export default function ShareRecordsModal({ records, recordsToShare, onClose }) 
                 return;
             }
             try {
-                const response = await axios.get(`http://localhost:3001/api/users/hospitals/${selectedHospital}/professionals`);
+                // --- MODIFICATION: Use API_BASE_URL ---
+                const response = await axios.get(`${API_BASE_URL}/api/users/hospitals/${selectedHospital}/professionals`);
                 if (response.data.success) {
                     setProfessionals(response.data.data);
                 }
@@ -54,7 +59,7 @@ export default function ShareRecordsModal({ records, recordsToShare, onClose }) 
             }
         };
         fetchProfessionals();
-    }, [selectedHospital]);
+    }, [selectedHospital, API_BASE_URL]); // --- MODIFICATION: Add API_BASE_URL dependency ---
 
     // Handle Grant Access Logic (UNCHANGED LOGIC)
     const handleGrantAccess = async () => {

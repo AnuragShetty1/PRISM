@@ -163,6 +163,11 @@ export default function AdminDashboard() {
         actionType: 'verify', 
     });
 
+    // --- MODIFICATION: Use Environment Variable for API URL ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const API_URL = `${API_BASE_URL}/api/hospital-admin`;
+    // --- END MODIFICATION ---
+
     const closeModal = () => {
         if (processingId) return;
         setModalState({ ...modalState, isOpen: false });
@@ -211,6 +216,7 @@ export default function AdminDashboard() {
 
 
     // --- DATA FETCHING (Logic Preserved) ---
+    // --- MODIFICATION: Add API_URL to dependency array ---
     const fetchData = useCallback(async () => {
         if (userProfile?.hospitalId === null || userProfile?.hospitalId === undefined) {
             setIsLoading(false);
@@ -223,8 +229,9 @@ export default function AdminDashboard() {
 
         try {
             const [requestsRes, professionalsRes] = await Promise.all([
-                fetch(`http://localhost:3001/api/hospital-admin/requests/${userProfile.hospitalId}`),
-                fetch(`http://localhost:3001/api/hospital-admin/professionals/${userProfile.hospitalId}`),
+                // --- MODIFICATION: Use API_URL ---
+                fetch(`${API_URL}/requests/${userProfile.hospitalId}`),
+                fetch(`${API_URL}/professionals/${userProfile.hospitalId}`),
             ]);
 
             if (!requestsRes.ok || !professionalsRes.ok) {
@@ -243,7 +250,7 @@ export default function AdminDashboard() {
         } finally {
             setIsLoading(false);
         }
-    }, [userProfile, requests.length, professionals.length]);
+    }, [userProfile, requests.length, professionals.length, API_URL]); // <-- Added API_URL
 
     useEffect(() => {
         fetchData();
@@ -256,7 +263,8 @@ export default function AdminDashboard() {
         setProcessingId(request.address);
         const toastId = toast.loading(`Initiating verification for ${request.name}...`);
         try {
-            const response = await fetch('http://localhost:3001/api/hospital-admin/verify-professional', {
+            // --- MODIFICATION: Use API_URL ---
+            const response = await fetch(`${API_URL}/verify-professional`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -282,7 +290,8 @@ export default function AdminDashboard() {
         setProcessingId(professional.address);
         const toastId = toast.loading(`Initiating revocation for ${professional.name}...`);
         try {
-            const response = await fetch('http://localhost:3001/api/hospital-admin/revoke-professional', {
+            // --- MODIFICATION: Use API_URL ---
+            const response = await fetch(`${API_URL}/revoke-professional`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -308,7 +317,8 @@ export default function AdminDashboard() {
         setProcessingId(request.address);
         const toastId = toast.loading(`Rejecting request for ${request.name}...`);
         try {
-            const response = await fetch('http://localhost:3001/api/hospital-admin/reject-professional', {
+            // --- MODIFICATION: Use API_URL ---
+            const response = await fetch(`${API_URL}/reject-professional`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -546,4 +556,3 @@ export default function AdminDashboard() {
         </div>
     );
 }
-

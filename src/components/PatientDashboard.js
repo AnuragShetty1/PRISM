@@ -66,10 +66,14 @@ export default function PatientDashboard() {
 
     const [professionalRequests, setProfessionalRequests] = useState([]);
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     const fetchProfessionalRequests = useCallback(async () => {
         if (!account) return;
         try {
-            const response = await axios.get(`http://localhost:3001/api/users/access-requests/patient/${account}`);
+            // --- MODIFICATION: Use API_BASE_URL ---
+            const response = await axios.get(`${API_BASE_URL}/api/users/access-requests/patient/${account}`);
             if (response.data.success) {
                 setProfessionalRequests(response.data.data || []);
             }
@@ -78,7 +82,7 @@ export default function PatientDashboard() {
             // [MODIFIED] Add user-facing toast notification on error
             toast.error(error.response?.data?.message || "Could not load access requests.");
         }
-    }, [account]);
+    }, [account, API_BASE_URL]); // --- MODIFICATION: Add API_BASE_URL dependency ---
 
     // REMOVED: fetchIpfsProfile and its useEffect
 

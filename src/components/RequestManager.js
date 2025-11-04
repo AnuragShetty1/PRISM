@@ -1,5 +1,7 @@
 "use client";
 import { useState } from 'react';
+// CORRECTED: Using relative paths
+import { useWeb3 } from '../context/Web3Context';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import AccessManager from './AccessManager';
@@ -35,6 +37,9 @@ export default function RequestManager({ professionalRequests, onRequestsUpdate 
     const [isAccessManagerOpen, setIsAccessManagerOpen] = useState(false);
     const [selectedRequestForApproval, setSelectedRequestForApproval] = useState(null);
     const [processingId, setProcessingId] = useState(null);
+
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
     // --- MODAL STATE (Unchanged) ---
     const [modalState, setModalState] = useState({
@@ -75,7 +80,8 @@ export default function RequestManager({ professionalRequests, onRequestsUpdate 
                 payload.grants = grants;
             }
 
-            await axios.post('http://localhost:3001/api/users/access-requests/respond', payload);
+            // --- MODIFICATION: Use API_BASE_URL ---
+            await axios.post(`${API_BASE_URL}/api/users/access-requests/respond`, payload);
 
             toast.success(`Request successfully ${response}!`, { id: toastId });
             onRequestsUpdate();

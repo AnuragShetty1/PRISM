@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useWeb3 } from '../context/Web3Context';
+// --- MODIFICATION: Use alias path ---
+import { useWeb3 } from '@/context/Web3Context';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import ConfirmationModal from './ConfirmationModal';
+// --- MODIFICATION: Use alias path ---
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Stethoscope, Copy, Users, Loader2, ShieldCheck } from 'lucide-react';
 
@@ -46,6 +48,9 @@ export default function AccessManagement() {
         confirmColor: 'bg-indigo-600',
     });
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     const closeModal = () => {
         if (isRevoking) return;
         setModalState({ ...modalState, isOpen: false });
@@ -62,11 +67,13 @@ export default function AccessManagement() {
         });
     };
 
+    // --- MODIFICATION: Add API_BASE_URL to dependency array ---
     const fetchGrants = async () => {
         if (!account) return;
         setIsLoading(true);
         try {
-            const response = await axios.get(`http://localhost:3001/api/users/access-grants/patient/${account}`);
+            // --- MODIFICATION: Use API_BASE_URL ---
+            const response = await axios.get(`${API_BASE_URL}/api/users/access-grants/patient/${account}`);
             if (response.data.success) {
                 const sortedGrants = (response.data.data || []).sort((a, b) => a.professionalName.localeCompare(b.professionalName));
                 setGrants(sortedGrants);
@@ -79,9 +86,10 @@ export default function AccessManagement() {
         }
     };
 
+    // --- MODIFICATION: Add API_BASE_URL to dependency array ---
     useEffect(() => {
         if (account) fetchGrants();
-    }, [account]);
+    }, [account, API_BASE_URL]); // <-- Added API_BASE_URL
 
     const handleRevoke = async (professionalAddress, recordIds) => {
         if (!api) {
