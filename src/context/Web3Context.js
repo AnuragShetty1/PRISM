@@ -549,45 +549,66 @@ export const Web3Provider = ({ children }) => {
                     }
                     
                     setProvider(web3authProvider);
+
+                    // --- THIS IS THE NEW FIX ---
+                    let isNetworkCorrect = false;
+                    const finalProvider = new ethers.BrowserProvider(web3authProvider); // Create this once
                     
-                    // --- THIS IS THE FIX ---
-                    // We assume social login ('openlogin') is *always* on the correct network
-                    // because we configured it in initChainConfig.
-                    // We *only* check and ask to switch if it's an external wallet (like MetaMask).
-                    let isNetworkCorrect = true; // Assume true for social login
-                    if (web3auth.connectedAdapterName !== "openlogin") {
-                        // Only check external wallets (like MetaMask)
-                        isNetworkCorrect = await checkAndSwitchNetwork(web3authProvider);
+                    try {
+                        const network = await finalProvider.getNetwork();
+                        const currentChainId = `0x${network.chainId.toString(16)}`;
+
+                        if (currentChainId === TARGET_CHAIN_ID) {
+                            isNetworkCorrect = true;
+                        } else {
+                            // Network is wrong. Check *how* they logged in.
+                            if (web3auth.connectedAdapterName === "openlogin") {
+                                // Social login is on the wrong chain. This is a critical config error.
+                                // We can't force a switch, so we must disconnect.
+                                console.error(`Web3Auth (openlogin) connected to the wrong chain: ${currentChainId}. Expected ${TARGET_CHAIN_ID}. Check Vercel environment variables.`);
+                                toast.error("Login failed: Network configuration error. Please contact support.");
+                                isNetworkCorrect = false;
+                            } else {
+                                // External wallet (MetaMask) is on the wrong chain. Try to switch it.
+                                toast.loading("Wrong network. Requesting switch to Polygon Amoy...");
+                                isNetworkCorrect = await checkAndSwitchNetwork(web3authProvider);
+                            }
+                        }
+                    } catch (networkError) {
+                        console.error("Could not get network information:", networkError);
+                        toast.error("Could not verify network. Please reconnect.");
+                        isNetworkCorrect = false;
                     }
-                    // --- END OF FIX ---
+                    // --- END OF NEW FIX ---
+
 
                     if (isNetworkCorrect) {
-                        // [FIX] We *try* to get an idToken, but we no longer fail if it's missing.
                         try {
                             const userInfo = await web3auth.getUserInfo();
                             if (userInfo && userInfo.idToken) {
-                                setIdToken(userInfo.idToken); // Set the state if it exists
+                                setIdToken(userInfo.idToken); 
                                 console.log("idToken successfully retrieved.");
                             } else {
-                                // This is now a warning, not an error.
                                 console.warn("No idToken found. This is expected for MetaMask / external wallet logins.");
-                                setIdToken(null); // Ensure it's null
+                                setIdToken(null); 
                             }
                         } catch (authError) {
                             console.warn("Could not get user info or idToken:", authError);
                             setIdToken(null);
                         }
 
-                        // [FIX] We proceed to set up the session REGARDLESS of whether we got a token.
-                        // This allows MetaMask (which has no token) to work for read operations.
-                        const finalProvider = new ethers.BrowserProvider(web3authProvider);
+                        // Proceed to setup session
                         const signerInstance = await finalProvider.getSigner();
                         const userAddress = await signerInstance.getAddress();
                         await setupUserSession(signerInstance, userAddress);
 
                     } else {
-                        // --- MODIFIED: Updated error for production ---
-                        toast.error("Please connect to the Polygon Amoy network to use the app.");
+                        // This is the loop. It will be triggered if:
+                        // 1. Social login is on the wrong chain (config error).
+                        // 2. MetaMask user refuses to switch.
+                        if (web3auth.connectedAdapterName !== "openlogin") {
+                            toast.error("Please connect to the Polygon Amoy network to use the app.");
+                        }
                         await disconnectWallet();
                     }
                     setIsLoadingProfile(false);
