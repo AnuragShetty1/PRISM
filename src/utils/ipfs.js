@@ -1,25 +1,79 @@
-import { create } from 'kubo-rpc-client';
 import toast from 'react-hot-toast';
 
-// This is the local gateway URL, not the one for Infura/public
-// [FIX] Added 'export' so other files (like Profile.js) can import this.
-export const IPFS_GATEWAY_URL = 'http://127.0.0.1:8080/ipfs/';
+// --- MODIFIED: This is now the Pinata gateway, not a local one ---
+export const IPFS_GATEWAY_URL = 'https://gateway.pinata.cloud/ipfs/';
 
-let ipfs = null;
+// --- REMOVED: kubo-rpc-client and getIpfsClient ---
+// We are no longer using a local IPFS node.
 
-const getIpfsClient = () => {
-    if (ipfs) return ipfs;
+// --- NEW: Function to upload a file directly to Pinata ---
+/**
+ * Uploads a file to Pinata using the JWT.
+ * @param {File} file The file to upload.
+ * @param {string} pinataJWT The Pinata JWT (must be NEXT_PUBLIC_PINATA_JWT)
+ * @returns {Promise<string>} The IPFS hash (CID) of the uploaded file.
+ */
+export const uploadToIPFS = async (file) => {
+    const jwt = process.env.NEXT_PUBLIC_PINATA_JWT;
+
+    if (!jwt) {
+        console.error("Missing NEXT_PUBLIC_PINATA_JWT environment variable.");
+        toast.error("File upload is not configured.");
+        throw new Error("Pinata JWT not found.");
+    }
+
+    // 1. Create FormData to send the file
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    // 2. Add Pinata metadata (optional, but good practice)
+    const metadata = JSON.stringify({
+        name: file.name,
+        keyvalues: {
+            app: 'PRISM-Medical-Records'
+        }
+    });
+    formData.append('pinataMetadata', metadata);
+
+    // 3. Add Pinata options
+    const options = JSON.stringify({
+        cidVersion: 1, // Use CIDv1
+    });
+    formData.append('pinataOptions', options);
+
+    // 4. Make the API request to Pinata
     try {
-        ipfs = create({ url: process.env.NEXT_PUBLIC_IPFS_API_URL || "http://127.0.0.1:5001/api/v0" });
-        return ipfs;
+        const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${jwt}`,
+                // Note: We do NOT set 'Content-Type': 'multipart/form-data'.
+                // The browser will set it automatically with the correct 'boundary' when using FormData.
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: "Unknown Pinata error" }));
+            console.error("Pinata API Error:", errorData);
+            throw new Error(`Pinata upload failed: ${errorData.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        // 5. Return the IPFS hash
+        return data.IpfsHash;
+
     } catch (error) {
-        console.error("Failed to connect to IPFS daemon:", error);
-        toast.error("Failed to connect to IPFS. Please ensure your local node is running.");
-        return null;
+        console.error("Error uploading to IPFS:", error);
+        toast.error(`Upload failed: ${error.message}`);
+        throw error;
     }
 };
 
+
 // A list of public IPFS gateways, ordered by preference for reliability.
+// --- MODIFIED: Moved Pinata to the top ---
 const gateways = [
   "https://gateway.pinata.cloud/ipfs/",
   "https://cloudflare-ipfs.com/ipfs/",
@@ -61,4 +115,3 @@ export const fetchFromIPFS = async (ipfsHash) => {
   toast.error(`Failed to fetch file ${ipfsHash} from all gateways.`);
   throw new Error(`Failed to fetch ${ipfsHash} from all available IPFS gateways.`);
 };
-

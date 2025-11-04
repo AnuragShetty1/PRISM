@@ -65,7 +65,7 @@ const getCategoryStyling = (category) => {
         case 'insurance-claim':
             // --- THIS IS THE FIX ---
             // The 'FileShield' icon seems to be undefined at runtime.
-            // We are replacing it with 'FileText' (which is confirmed to work)
+            // We are replacing it with 'ShieldPlus' (which is imported)
             // to prevent the render crash, while keeping the category's color.
             return { Icon: ShieldPlus, color: "text-indigo-600", borderColor: "border-indigo-500" };
         default:
@@ -107,6 +107,9 @@ export default function RecordList({ searchQuery }) {
     const [selectedRecordsForSharing, setSelectedRecordsForSharing] = useState([]);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+    // --- MODIFICATION: Add API_BASE_URL for deployment ---
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
     // --- Core Logic: Fetching and Polling (Unchanged) ---
     useEffect(() => {
         const fetchRecords = async (showLoader = true) => {
@@ -114,7 +117,8 @@ export default function RecordList({ searchQuery }) {
             if (showLoader) setIsLoading(true);
             try {
                 const params = { q: searchQuery || '' };
-                const response = await axios.get(`http://localhost:3001/api/users/records/patient/${account}`, { params });
+                // --- MODIFICATION: Use API_BASE_URL ---
+                const response = await axios.get(`${API_BASE_URL}/api/users/records/patient/${account}`, { params });
                 setRecords(response.data.success ? response.data.data || [] : []);
             } catch (error) {
                 console.error("Failed to fetch records:", error);
@@ -126,14 +130,16 @@ export default function RecordList({ searchQuery }) {
 
         const debounceFetch = setTimeout(() => fetchRecords(true), 300);
         return () => clearTimeout(debounceFetch);
-    }, [account, searchQuery]);
+        // --- MODIFICATION: Add API_BASE_URL to dependency array ---
+    }, [account, searchQuery, API_BASE_URL]);
 
     useEffect(() => {
         const pollRecords = async () => {
             if (!account) return;
             try {
                 const params = { q: searchQuery || '' };
-                const response = await axios.get(`http://localhost:3001/api/users/records/patient/${account}`, { params });
+                // --- MODIFICATION: Use API_BASE_URL ---
+                const response = await axios.get(`${API_BASE_URL}/api/users/records/patient/${account}`, { params });
                 if (response.data.success) {
                     setRecords(response.data.data || []);
                 }
@@ -143,7 +149,8 @@ export default function RecordList({ searchQuery }) {
         };
         const intervalId = setInterval(pollRecords, 10000);
         return () => clearInterval(intervalId);
-    }, [account, searchQuery]);
+        // --- MODIFICATION: Add API_BASE_URL to dependency array ---
+    }, [account, searchQuery, API_BASE_URL]);
 
     // --- UPDATED: useMemo now includes sorting logic ---
     const filteredRecords = useMemo(() => {
@@ -498,5 +505,3 @@ const SkeletonCard = () => (
         </div>
     </div>
 );
-
-

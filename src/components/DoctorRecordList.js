@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
-import { useWeb3 } from '../context/Web3Context'; // Reverting to single parent relative path
+// --- MODIFICATION: Use alias path ---
+import { useWeb3 } from '@/context/Web3Context';
 import toast from 'react-hot-toast';
-import { unwrapSymmetricKey } from '../utils/crypto'; // Reverting to single parent relative path
+// --- MODIFICATION: Use alias path ---
+import { unwrapSymmetricKey } from '@/utils/crypto';
 import {
     Eye, Loader2,ShieldPlus , AlertTriangle, User, ChevronLeft, Calendar,
     // --- ADDED: DownloadCloud for Download action ---
     DownloadCloud
 } from 'lucide-react';
-import { fetchFromIPFS } from '../utils/ipfs'; // Reverting to single parent relative path
+// --- MODIFICATION: Use alias path ---
+import { fetchFromIPFS } from '@/utils/ipfs';
 import { motion, AnimatePresence } from 'framer-motion'; 
 // --- (NEW) IMPORTS ---
 import { TestTube, ClipboardList, Stethoscope, FileShield, Ribbon } from 'lucide-react';
@@ -565,4 +568,3 @@ const DoctorRecordCardError = ({ record }) => (
         </div>
     </div>
 );
-

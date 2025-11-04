@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react';
 import { useWeb3 } from '@/context/Web3Context';
 import { hybridEncrypt } from '@/utils/crypto';
+// --- NEW: Import the uploadToIPFS function ---
+import { uploadToIPFS } from '@/utils/ipfs';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -143,7 +145,7 @@ export default function VerifiedUploadForm({ patientProfile, onUploadSuccess, al
     const handleDragEnter = useCallback((e) => { handleDrag(e); setIsDragActive(true); }, [handleDrag]);
     const handleDragLeave = useCallback((e) => { handleDrag(e); setIsDragActive(false); }, [handleDrag]);
 
-    // --- UPDATED LOGIC: Dual Encryption and Batch API Call ---
+    // --- MODIFIED handleSubmit LOGIC ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (files.length === 0 || !category) {
@@ -173,13 +175,10 @@ export default function VerifiedUploadForm({ patientProfile, onUploadSuccess, al
                 toast.loading(`[${index + 1}/${files.length}] Uploading encrypted bundle to IPFS...`, { id: fileToastId });
                 const encryptedBundleBlob = new Blob([JSON.stringify(encryptedBundle)], { type: 'application/json' });
 
-                const formData = new FormData();
-                formData.append("file", encryptedBundleBlob, `encrypted-${Date.now()}.json`);
-
-                const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
-                const uploadData = await uploadResponse.json();
-                if (!uploadResponse.ok) throw new Error(uploadData.error || 'Failed to upload encrypted bundle');
-                const bundleHash = uploadData.ipfsHash;
+                // --- MODIFICATION: Use uploadToIPFS instead of /api/upload ---
+                const encryptedFile = new File([encryptedBundleBlob], `encrypted-${Date.now()}.json`, { type: 'application/json' });
+                const bundleHash = await uploadToIPFS(encryptedFile);
+                // --- END MODIFICATION ---
 
                 const fileTitle = title.trim() ? `${title.trim()} - ${file.name}` : file.name;
 
@@ -195,13 +194,11 @@ export default function VerifiedUploadForm({ patientProfile, onUploadSuccess, al
                 // 2. Upload the metadata JSON
                 toast.loading(`[${index + 1}/${files.length}] Uploading metadata to IPFS...`, { id: fileToastId });
                 const metadataBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
-                const metadataFormData = new FormData();
-                metadataFormData.append("file", metadataBlob, `metadata-${Date.now()}.json`);
-
-                const metadataUploadResponse = await fetch('/api/upload', { method: 'POST', body: metadataFormData });
-                const metadataUploadData = await metadataUploadResponse.json();
-                if (!metadataUploadResponse.ok) throw new Error(metadataUploadData.error || 'Failed to upload metadata');
-                const metadataHash = metadataUploadData.ipfsHash;
+                
+                // --- MODIFICATION: Use uploadToIPFS instead of /api/upload ---
+                const metadataFile = new File([metadataBlob], `metadata-${Date.now()}.json`, { type: 'application/json' });
+                const metadataHash = await uploadToIPFS(metadataFile);
+                // --- END MODIFICATION ---
 
                 // 3. Extract keys for blockchain registration
                 const patientKeyBundle = encryptedBundle.encryptedSymmetricKeys[patientProfile.publicKey];
@@ -306,7 +303,7 @@ export default function VerifiedUploadForm({ patientProfile, onUploadSuccess, al
                         <ShieldCheck className={`h-5 w-5 text-${themeColor}-700`} />
                     </div>
                     <div className={`text-${themeColor}-800`}>
-                        <span className="font-semibold">Security Note:</span> The files are encrypted using the patients public key, ensuring only they and their authorized providers can decrypt and view the records.
+                        <span className="font-semibold">Security Note:</span> The files are encrypted using the patient's public key, ensuring only they and their authorized providers can decrypt and view the records.
                     </div>
                 </div>
 

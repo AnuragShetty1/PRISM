@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react';
 // FIX: Use alias paths as per user's project structure
 import { useWeb3 } from '@/context/Web3Context';
 import { hybridEncrypt } from '@/utils/crypto';
+// --- NEW: Import the uploadToIPFS function ---
+import { uploadToIPFS } from '@/utils/ipfs';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -114,7 +116,7 @@ export default function UploadForm() {
     const handleDragEnter = useCallback((e) => { handleDrag(e); setIsDragActive(true); }, [handleDrag]);
     const handleDragLeave = useCallback((e) => { handleDrag(e); setIsDragActive(false); }, [handleDrag]);
 
-    // --- UNCHANGED handleSubmit LOGIC ---
+    // --- MODIFIED handleSubmit LOGIC ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (files.length === 0 || !category) {
@@ -139,15 +141,13 @@ export default function UploadForm() {
                 const encryptedBundle = await hybridEncrypt(fileBuffer, [userProfile.publicKey]);
 
                 toast.loading(`[${index + 1}/${files.length}] Uploading encrypted bundle...`, { id: fileToastId });
+                
+                // --- MODIFICATION: Use uploadToIPFS instead of /api/upload ---
                 const encryptedBundleBlob = new Blob([JSON.stringify(encryptedBundle)], { type: 'application/json' });
-
-                const formData = new FormData();
-                formData.append("file", encryptedBundleBlob, `encrypted-${Date.now()}.json`);
-
-                const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
-                const uploadData = await uploadResponse.json();
-                if (!uploadResponse.ok) throw new Error(uploadData.error || 'Failed to upload encrypted bundle');
-                const bundleHash = uploadData.ipfsHash;
+                // We must convert the Blob to a File for the Pinata API
+                const encryptedFile = new File([encryptedBundleBlob], `encrypted-${Date.now()}.json`, { type: 'application/json' });
+                const bundleHash = await uploadToIPFS(encryptedFile);
+                // --- END MODIFICATION ---
 
                 const fileTitle = title ? `${title} - ${file.name}` : file.name;
 
@@ -160,14 +160,12 @@ export default function UploadForm() {
                 };
 
                 toast.loading(`[${index + 1}/${files.length}] Uploading metadata...`, { id: fileToastId });
-                const metadataBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
-                const metadataFormData = new FormData();
-                metadataFormData.append("file", metadataBlob, `metadata-${Date.now()}.json`);
 
-                const metadataUploadResponse = await fetch('/api/upload', { method: 'POST', body: metadataFormData });
-                const metadataUploadData = await metadataUploadResponse.json();
-                if (!metadataUploadResponse.ok) throw new Error(metadataUploadData.error || 'Failed to upload metadata');
-                const metadataHash = metadataUploadData.ipfsHash;
+                // --- MODIFICATION: Use uploadToIPFS instead of /api/upload ---
+                const metadataBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+                const metadataFile = new File([metadataBlob], `metadata-${Date.now()}.json`, { type: 'application/json' });
+                const metadataHash = await uploadToIPFS(metadataFile);
+                // --- END MODIFICATION ---
 
                 successfulUploads.push({
                     ipfsHash: metadataHash,
@@ -206,7 +204,7 @@ export default function UploadForm() {
 
         setIsUploading(false);
     };
-    // --- END UNCHANGED handleSubmit LOGIC ---
+    // --- END MODIFIED handleSubmit LOGIC ---
 
 
     // --- (Plan 3.0) MODIFIED JSX STRUCTURE ---
@@ -373,4 +371,3 @@ export default function UploadForm() {
         </motion.div>
     );
 }
-
