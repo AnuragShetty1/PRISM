@@ -303,7 +303,7 @@ export default function VerifiedUploadForm({ patientProfile, onUploadSuccess, al
                         <ShieldCheck className={`h-5 w-5 text-${themeColor}-700`} />
                     </div>
                     <div className={`text-${themeColor}-800`}>
-                        <span className="font-semibold">Security Note:</span> The files are encrypted using the patient's public key, ensuring only they and their authorized providers can decrypt and view the records.
+                        <span className="font-semibold">Security Note:</span> The files are encrypted using the patients public key, ensuring only they and their authorized providers can decrypt and view the records.
                     </div>
                 </div>
 
