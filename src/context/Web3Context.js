@@ -7,43 +7,40 @@ import { Web3Auth } from "@web3auth/modal";
 import { CHAIN_NAMESPACES, ADAPTER_EVENTS } from "@web3auth/base";
 import { generateAndStoreKeyPair, loadKeyPair } from '@/utils/crypto';
 
-// [REMOVED] Hardcoded local contract address
-// import contractAddressData from '@/contracts/contract-address.json';
+import contractAddressData from '@/contracts/contract-address.json';
 import medicalRecordsArtifact from '@/contracts/MedicalRecords.json';
 
 const Web3Context = createContext();
 
 // --- CONFIGURATION ---
+const hardhatChainConfig = {
+    chainId: "0x7a69", // 31337 in hex
+    displayName: "Hardhat Local Network",
+    rpcTarget: "http://127.0.0.1:8545",
+    blockExplorer: "http://localhost:3000",
+    ticker: "ETH",
+    tickerName: "Ethereum",
+};
+const TARGET_CHAIN_ID = hardhatChainConfig.chainId;
 
-// [NEW] Production chain config (Amoy) from environment variables
-const productionChainConfig = {
-  chainId: process.env.NEXT_PUBLIC_CHAIN_ID || "0x13882", // 80002 (Amoy)
-  displayName: "Polygon Amoy",
-  rpcTarget: process.env.NEXT_PUBLIC_RPC_URL || "",
-  blockExplorer: "https://www.oklink.com/amoy",
-  ticker: "MATIC",
-  tickerName: "Matic",
-  chainNamespace: CHAIN_NAMESPACES.EIP155,
+const initChainConfig = {
+    chainNamespace: CHAIN_NAMESPACES.EIP155,
+    chainId: "0x13881", // Polygon Mumbai
+    rpcTarget: "https://rpc.ankr.com/polygon_mumbai",
+    displayName: "Polygon Mumbai Testnet",
+    blockExplorer: "https://mumbai.polygonscan.com/",
+    ticker: "MATIC",
+    tickerName: "Matic",
 };
 
-// [MODIFIED] Set the target chain from the environment variable
-const TARGET_CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN_ID || "0x13882";
-
-// [REMOVED] Old Hardhat config
-// [REMOVED] Old Mumbai init config
-
 const web3auth = new Web3Auth({
-  clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID,
-  web3AuthNetwork: "sapphire_devnet",
-  // [MODIFIED] Use the new production config for Web3Auth
-  chainConfig: productionChainConfig,
+    clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID,
+    web3AuthNetwork: "sapphire_devnet",
+    chainConfig: initChainConfig,
 });
 
-// --- [MODIFIED FOR PRODUCTION (STEP 1)] ---
-// Replaced hardcoded 'http://localhost:3001' with the environment variable from the plan.
-// Added a fallback to 'http://localhost:3001' so local development doesn't break.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-// --- [END OF MODIFICATION] ---
+// [NEW] Define the base URL for your trusted backend
+const API_BASE_URL = 'http://localhost:3001';
 
 export const Web3Provider = ({ children }) => {
     // Core Web3 State
@@ -107,7 +104,7 @@ export const Web3Provider = ({ children }) => {
         }
     };
     
-    // --- NETWORK SWITCHING (MODIFIED FOR PRODUCTION) ---
+    // --- NETWORK SWITCHING (UNCHANGED) ---
     const checkAndSwitchNetwork = async (currentProvider) => {
         if (!currentProvider) return false;
         try {
@@ -117,9 +114,6 @@ export const Web3Provider = ({ children }) => {
 
             if (currentChainId === TARGET_CHAIN_ID) return true;
             
-            // [MODIFIED] User is not on the correct chain, attempt to switch
-            toast.error("Wrong network. Please switch to Polygon Amoy.");
-            
             try {
                 await currentProvider.request({
                     method: 'wallet_switchEthereumChain',
@@ -127,17 +121,15 @@ export const Web3Provider = ({ children }) => {
                 });
                 return true;
             } catch (switchError) {
-                // This error code 4902 means the chain has not been added to MetaMask
                 if (switchError.code === 4902) {
                     try {
                         await currentProvider.request({
                             method: 'wallet_addEthereumChain',
-                            // [MODIFIED] Use the production config to add Amoy
-                            params: [productionChainConfig], 
+                            params: [hardhatChainConfig],
                         });
                         return true;
                     } catch (addError) {
-                        toast.error("Failed to add Amoy network to wallet.");
+                        toast.error("Failed to add Hardhat network to wallet.");
                         console.error("Failed to add network:", addError);
                         return false;
                     }
@@ -289,19 +281,11 @@ export const Web3Provider = ({ children }) => {
 
     const setupUserSession = useCallback(async (signerInstance, userAddress) => {
         try {
-            // --- [MODIFIED FOR PRODUCTION (STEP 2)] ---
-            // Changed variable from NEXT_PUBLIC_CONTRACT_ADDRESS to NEXT_PUBLIC_CONTRACT_ADDRESS_AMOY
-            // to match the deployment plan and .env.local file.
-            const address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_AMOY;
-            if (!address) {
-                throw new Error("Contract address not found in environment. Please set NEXT_PUBLIC_CONTRACT_ADDRESS_AMOY.");
-            }
-            // --- [END OF MODIFICATION] ---
-            
+            const address = contractAddressData.MedicalRecords;
             const abi = medicalRecordsArtifact.abi;
             const contractInstance = new ethers.Contract(address, abi, signerInstance);
     
-            await contractInstance.owner(); // Test call to see if contract exists
+            await contractInstance.owner();
     
             setAccount(userAddress); // [FIX] This is where 'account' is set
             setSigner(signerInstance);
@@ -314,8 +298,7 @@ export const Web3Provider = ({ children }) => {
             toast.success("Connected successfully!");
         } catch (error) {
             console.error("Error setting up user session:", error);
-            // [MODIFIED] Updated error message for production
-            toast.error(`Contract not found on Amoy network. Please check the contract address.`);
+            toast.error(`Contract not found on Hardhat network. Please deploy it and check the address.`);
             await disconnectWallet();
         }
     }, [checkUserRegistrationAndState]);
@@ -560,8 +543,7 @@ export const Web3Provider = ({ children }) => {
                         await setupUserSession(signerInstance, userAddress);
 
                     } else {
-                        // [MODIFIED] Updated error message for production
-                        toast.error("Please connect to the Amoy network to use the app.");
+                        toast.error("Please connect to the Hardhat network to use the app.");
                         await disconnectWallet();
                     }
                     setIsLoadingProfile(false);
@@ -698,6 +680,7 @@ export const Web3Provider = ({ children }) => {
                 contract.off('ProfessionalAccessRequested', handleProfessionalAccessRequested);
             };
         }
+        // [FIX] We can remove userProfile from the dependency array as it's not needed for the new logic
     }, [contract, account, signer, fetchPatientData, checkUserRegistrationAndState, refetchUserProfile]);
 
 
