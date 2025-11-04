@@ -549,11 +549,17 @@ export const Web3Provider = ({ children }) => {
                     }
                     
                     setProvider(web3authProvider);
-                    let isNetworkCorrect = true;
-                    // --- MODIFIED: checkAndSwitchNetwork is now called for all adapters, ---
-                    // including 'openlogin' (social) to ensure they are on Amoy.
-                    // Web3Auth *should* connect to the chainConfig, but this is a failsafe.
-                    isNetworkCorrect = await checkAndSwitchNetwork(web3authProvider);
+                    
+                    // --- THIS IS THE FIX ---
+                    // We assume social login ('openlogin') is *always* on the correct network
+                    // because we configured it in initChainConfig.
+                    // We *only* check and ask to switch if it's an external wallet (like MetaMask).
+                    let isNetworkCorrect = true; // Assume true for social login
+                    if (web3auth.connectedAdapterName !== "openlogin") {
+                        // Only check external wallets (like MetaMask)
+                        isNetworkCorrect = await checkAndSwitchNetwork(web3authProvider);
+                    }
+                    // --- END OF FIX ---
 
                     if (isNetworkCorrect) {
                         // [FIX] We *try* to get an idToken, but we no longer fail if it's missing.
@@ -564,7 +570,7 @@ export const Web3Provider = ({ children }) => {
                                 console.log("idToken successfully retrieved.");
                             } else {
                                 // This is now a warning, not an error.
-                                console.warn("No idToken found. API calls for sponsored transactions will fail. This is expected for MetaMask / external wallet logins.");
+                                console.warn("No idToken found. This is expected for MetaMask / external wallet logins.");
                                 setIdToken(null); // Ensure it's null
                             }
                         } catch (authError) {

@@ -34,14 +34,28 @@ const startIndexer = async () => {
 
     logger.info(`Indexer connected to contract at address: ${config.contractAddress}`);
 
-    let lastProcessedBlock = (await provider.getBlockNumber()) - 1;
+    // --- MODIFICATION: Add a safety buffer for the initial block ---
+    // We start 2 blocks behind `latest` to ensure the block is queryable.
+    let lastProcessedBlock = (await provider.getBlockNumber()) - 2;
+    // Ensure we don't start from a negative block number on a fresh chain
+    if (lastProcessedBlock < 0) lastProcessedBlock = 0;
+    
     logger.info(`Starting to process events from block: ${lastProcessedBlock + 1}`);
 
     const pollInterval = 4000; // Poll every 4 seconds
 
     const pollEvents = async () => {
         try {
-            const latestBlock = await provider.getBlockNumber();
+            // --- MODIFICATION: Add 1 block safety buffer to prevent "invalid block range" error ---
+            // Get the latest block number
+            let latestBlock = await provider.getBlockNumber();
+
+            // Subtract 1 as a safety buffer. This ensures the block is finalized and queryable.
+            if (latestBlock > 0) {
+                latestBlock = latestBlock - 1;
+            }
+            // --- END MODIFICATION ---
+
             if (latestBlock <= lastProcessedBlock) {
                 return; // No new blocks to process
             }
@@ -259,4 +273,3 @@ const startIndexer = async () => {
 };
 
 module.exports = startIndexer;
- 
