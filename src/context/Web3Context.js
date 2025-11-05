@@ -360,7 +360,6 @@ export const Web3Provider = ({ children }) => {
         }
     }, [checkUserRegistrationAndState]);
 
-section
     // This function for generating keys locally is still needed (UNCHANGED)
     const generateAndSetKeyPair = async () => {
         if (!signer) {
