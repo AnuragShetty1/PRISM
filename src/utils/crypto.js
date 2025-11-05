@@ -11,7 +11,7 @@ const LOCAL_STORAGE_SIGNATURE_MESSAGE = "Sign this message to generate and secur
  * @param {ethers.Signer} signer - The user's wallet signer instance.
  * @returns {Promise<CryptoKey>} A key suitable for AES-GCM encryption.
  */
-const getLocalStorageEncryptionKey = async (signer) => {
+export const getLocalStorageEncryptionKey = async (signer) => {
     // [MODIFIED] Use the dedicated message for local storage encryption
     const signature = await signer.signMessage(LOCAL_STORAGE_SIGNATURE_MESSAGE);
     const signatureBytes = ethers.toUtf8Bytes(signature);
