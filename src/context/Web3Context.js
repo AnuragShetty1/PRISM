@@ -539,6 +539,11 @@ export const Web3Provider = ({ children }) => {
             // [FIX] Add userAddress: account to the body
             return apiFetch('/api/users/sponsored/save-public-key', 'POST', { publicKey, signature, userAddress: account });
         },
+        // [NEW] Add this function to handle saving the encrypted key
+        saveEncryptedKey: (encryptedKey) => {
+            // This will call 'PUT /api/users/:address' using the correct API_BASE_URL and token
+            return apiFetch(`/api/users/${account}`, 'PUT', { encryptedPrivateKey: encryptedKey });
+        },
         updateUserProfile: (name) => {
             // [FIX] Add userAddress: account to the body
             return apiFetch('/api/users/sponsored/update-profile', 'POST', { name, userAddress: account });
