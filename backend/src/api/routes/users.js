@@ -104,6 +104,7 @@ router.get('/status/:address', async (req, res, next) => {
         requestedHospitalId: user.requestedHospitalId,
         name: user.name,
         publicKey: user.publicKey,
+        encryptedPrivateKey: user.encryptedPrivateKey,
       });
     }
 
@@ -129,7 +130,73 @@ router.get('/status/:address', async (req, res, next) => {
     next(error);
   }
 });
+/**
+ * @route   PUT /api/users/:address
+ * @desc    Update a user's off-chain data (e.g., name, encryptedPrivateKey).
+ * @access  Private (Authenticated User)
+ */
+// [MODIFIED] Using next(error) for error handling
+router.put('/:address', authenticate, async (req, res, next) => {
+  try {
+    const { address } = req.params;
+    const authenticatedUserAddress = req.user?.address;
 
+    // Security check: Ensure the authenticated user matches the address they are trying to update
+    if (
+      !authenticatedUserAddress ||
+      address.toLowerCase() !== authenticatedUserAddress.toLowerCase()
+    ) {
+      throw new ForbiddenError(
+        'You are not authorized to update this user.'
+      );
+    }
+
+    // [NEW] Sanitize the update data to only allow specific fields
+    // This prevents malicious users from updating protected fields like 'role' or 'isVerified'
+    const allowedUpdates = {};
+    if (req.body.name !== undefined) {
+      allowedUpdates.name = req.body.name;
+    }
+    if (req.body.encryptedPrivateKey !== undefined) {
+      allowedUpdates.encryptedPrivateKey = req.body.encryptedPrivateKey;
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      throw new BadRequestError('No valid fields provided for update.');
+    }
+
+    const user = await User.findOneAndUpdate(
+      { address: address.toLowerCase() },
+      { $set: allowedUpdates },
+      { new: true } // Return the updated document
+    );
+
+    if (!user) {
+      throw new NotFoundError('User not found.');
+    }
+
+    logger.info(
+      `User data updated for ${address}. Fields: ${Object.keys(
+        allowedUpdates
+      ).join(', ')}`
+    );
+
+    // Return a subset of the user data, excluding sensitive info
+    res.status(200).json({
+      success: true,
+      message: 'User updated successfully.',
+      data: {
+        address: user.address,
+        name: user.name,
+        publicKey: user.publicKey,
+        encryptedPrivateKey: user.encryptedPrivateKey,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error updating user ${req.params.address}:`, error);
+    next(error);
+  }
+});
 /**
  * @route   POST /api/users/request-association
  * @desc    Allows a professional to request affiliation with a hospital.

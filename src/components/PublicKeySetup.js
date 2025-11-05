@@ -1,57 +1,99 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react'; // Import useState
 import { useWeb3 } from '@/context/Web3Context';
-import { ShieldCheck } from 'lucide-react';
-import toast from 'react-hot-toast'; // Import toast for local component error/loading handling
+import { ShieldCheck, AlertCircle } from 'lucide-react'; // Import AlertCircle for errors
+import toast from 'react-hot-toast';
+import { encryptWithPassword } from '@/utils/crypto'; // Import the new crypto function
 
 const PublicKeySetup = () => {
-    // [MODIFIED] Destructure 'setIsConfirmingKey' from the context
-    const { api, userProfile, generateAndSetKeyPair, keyPair, refetchUserProfile, setIsConfirmingKey } = useWeb3();
-    const [isLoading, setIsLoading] = React.useState(false); // This is just for the button itself
+    const { api, userProfile, generateAndSetKeyPair, keyPair, setIsConfirmingKey } = useWeb3();
+    const [isLoading, setIsLoading] = useState(false);
+
+    // [NEW] State for password fields and error messages
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState(null);
 
     const handleSaveKey = async () => {
+        // [NEW] Clear previous errors and run validation first
+        setError(null);
+        if (!password || !confirmPassword) {
+            setError("Please create and confirm your master password.");
+            return;
+        }
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters long.");
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError("Passwords do not match. Please try again.");
+            return;
+        }
+
         setIsLoading(true);
-        // [NEW] Set the *global* "confirming" state to true.
-        // This will be used by the parent component to show a loading screen.
-        setIsConfirmingKey(true); 
+        setIsConfirmingKey(true);
         const toastId = toast.loading("Securing account...");
-        
+
         try {
             let keysToSave = keyPair;
 
-            // If keys aren't in state (or are incomplete), generate them.
-            // This function handles the user's signature.
             if (!keysToSave || !keysToSave.publicKey || !keysToSave.signature) {
                 toast.loading("Generating encryption keys... Please sign the message in your wallet.", { id: toastId });
                 keysToSave = await generateAndSetKeyPair();
-                
+
                 if (!keysToSave || !keysToSave.publicKey || !keysToSave.signature) {
                     throw new Error("Key generation failed or was cancelled.");
                 }
             }
 
-            // [MODIFIED] Call the new sponsored API endpoint with the public key and signature
+            // --- [NEW] Encrypt and save the private key to the backend ---
+            toast.loading("Encrypting your private key...", { id: toastId });
+
+            // 1. Export the private key (CryptoKey) to a string (JWK)
+            const privateKeyJwk = await window.crypto.subtle.exportKey('jwk', keysToSave.privateKey);
+            const privateKeyString = JSON.stringify(privateKeyJwk);
+
+            // 2. Encrypt the string using the user's password
+            const encryptedKey = await encryptWithPassword(privateKeyString, password);
+
+            // 3. Save the encrypted string to the backend
+            toast.loading("Saving encrypted key to backend...", { id: toastId });
+
+            // We need the JWT token to authenticate this request
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                throw new Error("Authentication error: No session token found. Please log in again.");
+            }
+
+            const response = await fetch(`/api/users/${userProfile.address}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ encryptedPrivateKey: encryptedKey }),
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || "Failed to save encrypted key to backend.");
+            }
+            // --- End of new logic ---
+
+            // [MODIFIED] This now runs *after* the backend save is successful.
             toast.loading("Saving your public key to the blockchain... This may take a moment.", { id: toastId });
             await api.savePublicKey(keysToSave.publicKey, keysToSave.signature);
 
-            // The context's 'handlePublicKeySaved' event listener will catch this,
-            // set isConfirmingKey(false), and hide this component.
             toast.success("Security setup complete! Your dashboard is loading...", { id: toastId });
-            
-            // [REMOVED] Do not call refetchUserProfile() here.
-            // This is part of the race condition. The event listener
-            // in Web3Context is now the single source of truth for this.
-            // await refetchUserProfile();
 
         } catch (error) {
-            // Display error if anything fails
-            toast.error(error.message || "Failed to complete security setup.", { id: toastId });
+            const errorMessage = error.message || "Failed to complete security setup.";
+            setError(errorMessage); // [NEW] Show error in the component
+            toast.error(errorMessage, { id: toastId });
             console.error("Setup failed:", error);
-            // [NEW] If the API call fails, we must reset the global loading state.
             setIsConfirmingKey(false);
         } finally {
-            // This just re-enables the button if the user is still on this page (e.g., after an error)
             setIsLoading(false);
         }
     };
@@ -62,18 +104,47 @@ const PublicKeySetup = () => {
                 <ShieldCheck className="h-16 w-16 text-green-400 mx-auto mb-4" />
                 <h2 className="text-3xl font-bold text-white mb-2">One-Time Security Setup</h2>
                 <p className="text-gray-300 mb-6">
-                    Welcome, {userProfile?.name}! To secure your account and enable end-to-end encryption for your records, we need to save your generated public key to the blockchain. This is a one-time action.
+                    Welcome, {userProfile?.name}! To secure your account and enable portability, please create a master password.
                 </p>
+                <p className="text-gray-400 text-sm mb-6 -mt-4">
+                    This password will be used to encrypt your private key, allowing you to access your account from any device. <strong className="text-yellow-400">We do not store this password. If you forget it, you will lose access to your account.</strong>
+                </p>
+
+                {/* [NEW] Password Inputs */}
+                <div className="space-y-4 mb-6">
+                    <input
+                        type="password"
+                        placeholder="Create Master Password (min 8 characters)"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <input
+                        type="password"
+                        placeholder="Confirm Master Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                </div>
+
+                {/* [NEW] Error Message Display */}
+                {error && (
+                    <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6 flex items-center">
+                        <AlertCircle className="h-5 w-5 mr-3" />
+                        <span>{error}</span>
+                    </div>
+                )}
+
                 <button
                     onClick={handleSaveKey}
                     disabled={isLoading}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 disabled:bg-slate-500 disabled:cursor-wait"
-                >
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 disabled:bg-slate-500 disabled:cursor-wait">
+
                     {isLoading ? 'Processing...' : 'Secure My Account & Save Key'}
                 </button>
                 <p className="text-xs text-gray-500 mt-4">
-                    {/* [MODIFIED] Updated text to reflect gas-less model */}
-                    This is a sponsored blockchain transaction. You do not need to pay any gas fees.
+                    This also includes a sponsored blockchain transaction. You do not need to pay any gas fees.
                 </p>
             </div>
         </div>
@@ -81,4 +152,3 @@ const PublicKeySetup = () => {
 };
 
 export default PublicKeySetup;
-

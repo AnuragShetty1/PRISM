@@ -43,9 +43,13 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
+    // Stores the password-encrypted private key for portability
+    encryptedPrivateKey: {
+      type: String,
+      default: null,
+    },
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
-
