@@ -66,7 +66,7 @@ const PublicKeySetup = () => {
                 throw new Error("Authentication error: No session token found. Please log in again.");
             }
 
-            const response = await fetch(`/api/users/${userProfile.address}`, {
+            const response = await fetch(`/api/users/${userProfile.walletAddress}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
