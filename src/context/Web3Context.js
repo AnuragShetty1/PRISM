@@ -360,6 +360,7 @@ export const Web3Provider = ({ children }) => {
         }
     }, [checkUserRegistrationAndState]);
 
+section
     // This function for generating keys locally is still needed (UNCHANGED)
     const generateAndSetKeyPair = async () => {
         if (!signer) {
@@ -491,10 +492,22 @@ export const Web3Provider = ({ children }) => {
             throw new Error(errorData.message || "API request failed");
         }
         
-        // Handle responses that might not have a JSON body (e.g., 204 No Content)
+        // Handle responses that might not have a JSON body
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
-            return response.json();
+            // [FIX] Wrap this in a try...catch, as a 200/202 response
+            // from the sponsor backend might have an empty body.
+            try {
+                return await response.json();
+            } catch (e) {
+                if (e.name === 'SyntaxError') {
+                    // This happens on empty body, which is fine for a 202 'Accepted'
+                    console.log(`API call to ${endpoint} succeeded but returned empty JSON body.`);
+                    return { success: true, message: "Request accepted." }; // Return a mock success object
+                }
+                // Re-throw other parsing errors
+                throw e;
+            }
         } else {
             return response.text(); // Or return null, or response.status
         }

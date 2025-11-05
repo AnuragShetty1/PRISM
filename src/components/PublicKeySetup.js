@@ -76,8 +76,23 @@ const PublicKeySetup = () => {
             });
 
             if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.message || "Failed to save encrypted key to backend.");
+                // [FIX] Robust error handling
+                let errorMessage = "Failed to save encrypted key to backend.";
+                try {
+                    // Try to parse the error response as JSON
+                    const errData = await response.json();
+                    if (errData && errData.message) {
+                        errorMessage = errData.message;
+                    } else {
+                        // The JSON was valid but didn't have a 'message'
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+                } catch (jsonError) {
+                    // The error response was not JSON. Use the status text.
+                    console.warn("Server error response was not JSON:", jsonError);
+                    errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
             // --- End of new logic ---
 
