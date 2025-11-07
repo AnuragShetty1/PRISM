@@ -253,38 +253,37 @@ const startIndexer = async () => {
             wssProvider = new ethers.WebSocketProvider(config.polygonAmoyWssUrl);
             wssContract = new ethers.Contract(config.contractAddress, MedicalRecordsABI, wssProvider);
 
-            // --- [THIS IS THE FIX] ---
-            // We get the underlying websocket object (wssProvider._websocket)
-            // and attach native 'onopen', 'onclose', and 'onerror' listeners.
-            // This is the correct way to handle the WebSocket lifecycle.
+            // --- [THIS IS THE FIX (Third Attempt)] ---
+            // We use *only* the public, documented event listeners for ethers v6.
+            // We will trust ethers' built-in reconnection logic.
+            // We DO NOT access any internal properties like `_websocket`.
 
-            // (Optional) Log when the connection is successfully opened
-            wssProvider._websocket.onopen = () => {
-                logger.info('WebSocket connection successfully established.');
-            };
-
-            // [FIXED] Handle WebSocket closure (for auto-reconnect)
-            wssProvider._websocket.onclose = (event) => {
-                logger.warn(`WebSocket connection closed (code: ${event.code}, reason: ${event.reason || 'N/A'}). Reconnecting in 5 seconds...`);
-                if (wssContract) {
-                    wssContract.removeAllListeners(); // Clean up old contract listeners
+            // Log when the provider successfully connects or reconnects
+            wssProvider.on("network", (network, oldNetwork) => {
+                if (oldNetwork) {
+                    // This event fires when a connection is re-established
+                    logger.info(`WebSocket re-connected to network: ${network.name}`);
+                } else {
+                    // This event fires on the first successful connection
+                    logger.info(`WebSocket connected to network: ${network.name} (ChainId: ${network.chainId})`);
                 }
-                setTimeout(connectWebSocket, 5000); // Reconnect
-            };
+            });
 
-            // [FIXED] Handle WebSocket errors
-            wssProvider._websocket.onerror = (error) => {
-                // We just log the error. The 'onclose' event will usually fire next,
-                // which will then trigger the reconnection logic.
-                logger.error('WebSocket provider error:', error.message || 'An unknown error occurred');
-            };
+            // Log any errors from the WebSocket provider
+            wssProvider.on("error", (error) => {
+                logger.error(`WebSocket Provider Error: ${error.message}`, error);
+                // Ethers v6 will automatically attempt to reconnect in the background.
+                // We just log the error here. If the connection is dropped,
+                // ethers will keep trying, and will fire a "network" event
+                // (above) if it succeeds.
+            });
             // --- [END OF FIX] ---
 
 
             logger.info('WebSocket provider connected. Attaching contract event listeners...');
 
-            // [NEW] Attach all event listeners to their new handlers
-            // ... (These are unchanged and correct) ...
+            // Attach all event listeners to their new handlers
+            // (These are unchanged)
             wssContract.on('RegistrationRequested', handleRegistrationRequested);
             wssContract.on('HospitalVerified', handleHospitalVerified);
             wssContract.on('HospitalRevoked', handleHospitalRevoked);
@@ -296,10 +295,11 @@ const startIndexer = async () => {
             wssContract.on('AccessGranted', handleAccessGranted);
             wssContract.on('AccessRevoked', handleAccessRevoked);
 
-            // [REMOVED] The problematic wssProvider.on('close', ...)
-            // [REMOVED] The problematic wssProvider.on('error', ...)
+            logger.info('All contract event listeners attached.');
 
         } catch (error) {
+            // This block catches errors during the *initial instantiation*
+            // (e.g., if the wss URL is badly formatted)
             logger.error(`Failed to initialize WebSocket provider: ${error.message}. Retrying in 5 seconds...`);
             if (wssContract) {
                 wssContract.removeAllListeners();
