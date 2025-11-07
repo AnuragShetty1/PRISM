@@ -253,9 +253,38 @@ const startIndexer = async () => {
             wssProvider = new ethers.WebSocketProvider(config.polygonAmoyWssUrl);
             wssContract = new ethers.Contract(config.contractAddress, MedicalRecordsABI, wssProvider);
 
-            logger.info('WebSocket provider connected. Attaching event listeners...');
+            // --- [THIS IS THE FIX] ---
+            // We get the underlying websocket object (wssProvider._websocket)
+            // and attach native 'onopen', 'onclose', and 'onerror' listeners.
+            // This is the correct way to handle the WebSocket lifecycle.
+
+            // (Optional) Log when the connection is successfully opened
+            wssProvider._websocket.onopen = () => {
+                logger.info('WebSocket connection successfully established.');
+            };
+
+            // [FIXED] Handle WebSocket closure (for auto-reconnect)
+            wssProvider._websocket.onclose = (event) => {
+                logger.warn(`WebSocket connection closed (code: ${event.code}, reason: ${event.reason || 'N/A'}). Reconnecting in 5 seconds...`);
+                if (wssContract) {
+                    wssContract.removeAllListeners(); // Clean up old contract listeners
+                }
+                setTimeout(connectWebSocket, 5000); // Reconnect
+            };
+
+            // [FIXED] Handle WebSocket errors
+            wssProvider._websocket.onerror = (error) => {
+                // We just log the error. The 'onclose' event will usually fire next,
+                // which will then trigger the reconnection logic.
+                logger.error('WebSocket provider error:', error.message || 'An unknown error occurred');
+            };
+            // --- [END OF FIX] ---
+
+
+            logger.info('WebSocket provider connected. Attaching contract event listeners...');
 
             // [NEW] Attach all event listeners to their new handlers
+            // ... (These are unchanged and correct) ...
             wssContract.on('RegistrationRequested', handleRegistrationRequested);
             wssContract.on('HospitalVerified', handleHospitalVerified);
             wssContract.on('HospitalRevoked', handleHospitalRevoked);
@@ -267,20 +296,8 @@ const startIndexer = async () => {
             wssContract.on('AccessGranted', handleAccessGranted);
             wssContract.on('AccessRevoked', handleAccessRevoked);
 
-            // [NEW] Handle WebSocket closure (for auto-reconnect)
-            wssProvider.on('close', (code, reason) => {
-                logger.warn(`WebSocket connection closed (code: ${code}, reason: ${reason}). Reconnecting in 5 seconds...`);
-                if (wssContract) {
-                    wssContract.removeAllListeners(); // Clean up old listeners
-                }
-                setTimeout(connectWebSocket, 5000); // Reconnect
-            });
-
-            // [NEW] Handle WebSocket errors
-            wssProvider.on('error', (error) => {
-                logger.error('WebSocket provider error:', error.message);
-                // The 'close' event will usually fire next, which triggers the reconnect
-            });
+            // [REMOVED] The problematic wssProvider.on('close', ...)
+            // [REMOVED] The problematic wssProvider.on('error', ...)
 
         } catch (error) {
             logger.error(`Failed to initialize WebSocket provider: ${error.message}. Retrying in 5 seconds...`);
