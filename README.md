@@ -1,327 +1,155 @@
-PRISM — Patient Record Integrity and Security Management
+# PRISM — Patient Record Integrity and Security Management
 
 PRISM is a decentralized, patient-centric medical records management system designed for privacy, security, and interoperability. It leverages the Ethereum blockchain for immutable access control and a hybrid on-chain/off-chain architecture to ensure that sensitive patient data remains private and entirely under the patient's control.
 
-The system uses End-to-End Hybrid Encryption, storing only encrypted data blobs on IPFS and managing access rights via upgradeable smart contracts. A Node.js backend serves as a high-performance indexer and API, enabling real-time application features without sacrificing decentralized trust.
+The system uses **End-to-End Hybrid Encryption**, storing only encrypted data blobs on IPFS and managing access rights via upgradeable smart contracts. A Node.js backend serves as a high-performance indexer and API, enabling real-time application features without sacrificing decentralized trust.
 
-Table of Contents
+---
 
-Overview & Core Features
+## Table of Contents
 
-High-Level Architecture
+- [Overview & Core Features](#overview--core-features)
+- [High-Level Architecture](#high-level-architecture)
+- [Smart Contract Architecture](#smart-contract-architecture)
+- [User Roles & Permissions](#user-roles--permissions)
+- [Technology Stack](#technology-stack)
+- [Encryption & Data Flow (Detailed)](#encryption--data-flow-detailed)
+  - [1. User Onboarding & Key Generation](#1-user-onboarding--key-generation)
+  - [2. Patient: Uploading a Record](#2-patient-uploading-a-record)
+  - [3. Patient: Sharing a Record](#3-patient-sharing-a-record)
+  - [4. Grantee: Accessing a Record](#4-grantee-accessing-a-record)
+- [Project Structure](#project-structure)
+- [Advantages & Limitations](#advantages--limitations)
+- [Environment Variables & Configuration](#environment-variables--configuration)
+  - [Frontend (.env.local)](#frontend-envlocal)
+  - [Backend (backend/.env)](#backend-backendenv)
+- [Local Development Setup](#local-development-setup)
 
-Smart Contract Architecture
+---
 
-User Roles & Permissions
-
-Technology Stack
-
-Encryption & Data Flow (Detailed)
-
-1. User Onboarding & Key Generation
-
-2. Patient: Uploading a Record
-
-3. Patient: Sharing a Record
-
-4. Grantee: Accessing a Record
-
-Project Structure
-
-Advantages & Limitations
-
-Environment Variables & Configuration
-
-Frontend (.env.local)
-
-Backend (backend/.env)
-
-Local Development Setup
-
-Overview & Core Features
+## Overview & Core Features
 
 PRISM is designed to solve the core problems of traditional health records: data silos, lack of patient control, and interoperability.
 
-Patient-Centric Control: Patients are the sole owners of their records. They have granular control to grant and revoke access to any professional, at any time, for any record.
+- **Patient-Centric Control:** Patients are the sole owners of their records. They have granular control to grant and revoke access to any professional, at any time, for any record.
+- **End-to-End Hybrid Encryption:** All medical files are encrypted in the browser before being uploaded. The file's symmetric encryption key (DEK) is then asymmetrically encrypted for the patient and any professional they grant access to. The platform never has access to plaintext medical data.
+- **Off-Chain Data, On-Chain Access:** Sensitive files are stored on IPFS, not the blockchain. The smart contract only stores metadata, ipfsHash pointers, and the encrypted DEKs for authorized users. This ensures privacy and dramatically reduces gas costs.
+- **Hybrid On/Off-Chain System:** A Node.js backend indexes all smart contract events into a MongoDB database. This allows the frontend to load data (like record lists, user profiles, and access requests) instantly via a REST API, while still relying on the blockchain as the ultimate source of truth.
+- **Role-Based Access Control (RBAC):** The smart contract defines multiple user roles (Patient, Doctor, LabTechnician, HospitalAdmin, SuperAdmin, etc.) with specific permissions.
+- **Real-Time Updates:** The backend uses a WebSocket server to push live event notifications (e.g., AccessRequested, RecordAdded) to the frontend, creating a responsive user experience.
+- **Admin Gas Abstraction:** Administrative actions (like a SuperAdmin verifying a hospital or a HospitalAdmin registering a professional) are initiated via a backend API. The backend server wallet pays the gas fee for these transactions, abstracting the complexity away from admin users.
+- **User-Friendly Onboarding:** Leverages Web3Auth to allow users to log in with familiar web2 accounts (Google, email, etc.), lowering the barrier to entry.
+- **Upgradeable Smart Contracts:** Uses the OpenZeppelin UUPS (Universal Upgradeable Proxy Standard) pattern, allowing contract logic to be upgraded without migrating data.
 
-End-to-End Hybrid Encryption: All medical files are encrypted in the browser before being uploaded. The file's symmetric encryption key (DEK) is then asymmetrically encrypted for the patient and any professional they grant access to. The platform never has access to plaintext medical data.
+---
 
-Off-Chain Data, On-Chain Access: Sensitive files are stored on IPFS, not the blockchain. The smart contract only stores metadata, ipfsHash pointers, and the encrypted DEKs for authorized users. This ensures privacy and dramatically reduces gas costs.
-
-Hybrid On/Off-Chain System: A Node.js backend indexes all smart contract events into a MongoDB database. This allows the frontend to load data (like record lists, user profiles, and access requests) instantly via a REST API, while still relying on the blockchain as the ultimate source of truth.
-
-Role-Based Access Control (RBAC): The smart contract defines multiple user roles (Patient, Doctor, LabTechnician, HospitalAdmin, SuperAdmin, etc.) with specific permissions.
-
-Real-Time Updates: The backend uses a WebSocket server to push live event notifications (e.g., AccessRequested, RecordAdded) to the frontend, creating a responsive user experience.
-
-Admin Gas Abstraction: Administrative actions (like a SuperAdmin verifying a hospital or a HospitalAdmin registering a professional) are initiated via a backend API. The backend server wallet pays the gas fee for these transactions, abstracting the complexity away from admin users.
-
-User-Friendly Onboarding: Leverages Web3Auth to allow users to log in with familiar web2 accounts (Google, email, etc.), lowering the barrier to entry.
-
-Upgradeable Smart Contracts: Uses the OpenZeppelin UUPS (Universal Upgradeable Proxy Standard) pattern, allowing contract logic to be upgraded without migrating data.
-
-High-Level Architecture
+## High-Level Architecture
 
 The system is composed of four main components:
 
-Frontend (Next.js + Ethers.js): The client-side application used by all roles. It handles:
+1. **Frontend (Next.js + Ethers.js):**  
+   Handles authentication, client-side cryptography, file encryption/decryption, transaction signing, API queries, and real-time updates.
 
-Authentication via Web3Auth.
+2. **Smart Contracts (Solidity):**  
+   Deployed on Ethereum, storing user/record metadata, access mappings, and emitting events.
 
-Client-side cryptographic key generation (ECDH P-256).
+3. **IPFS (via Pinata):**  
+   Decentralized storage for all encrypted medical files.
 
-File encryption (AES-GCM) and decryption.
+4. **Backend (Node.js + MongoDB):**  
+   Indexes contract events, provides a REST API, relays admin transactions, and pushes live updates via WebSocket.
 
-Signing and sending transactions for user-initiated actions (uploading, granting access).
+---
 
-Querying the backend API for fast data loading.
-
-Subscribing to the WebSocket server for real-time updates.
-
-Smart Contracts (Solidity): Deployed on the Ethereum network. They act as the decentralized source of truth for:
-
-User and professional registration (User structs).
-
-User public keys for encryption.
-
-Record metadata (e.g., ipfsHash, title, category).
-
-The mapping of who can access what (recordDeks[recordId][granteeAddress]).
-
-Emitting events for every state change.
-
-IPFS (via Pinata): A decentralized storage network. PRISM stores all encrypted medical files on IPFS. The smart contract only stores the IPFS content identifier (ipfsHash).
-
-Backend (Node.js + MongoDB): A service layer that optimizes the application.
-
-Indexer: Listens to all contract events (RecordAdded, AccessGranted, etc.) and populates a MongoDB database.
-
-REST API (Express): Serves the indexed data (users, records, requests) to the frontend for fast, scalable reads.
-
-Admin Relayer: Provides secure API endpoints for admins. When called, the server uses its own wallet (SUPER_ADMIN_PRIVATE_KEY) to pay for and send administrative transactions (e.g., verifyHospital).
-
-WebSocket Server (ws): Pushes live event data to connected clients.
-
-Smart Contract Architecture
+## Smart Contract Architecture
 
 The smart contract logic is separated into multiple contracts for clarity, security, and to support the UUPS upgradeable proxy pattern.
 
-Storage.sol: This abstract contract holds all state variables (structs, mappings, etc.). It does not contain any logic. By isolating storage, we can upgrade the logic contracts (AccessControl, MedicalRecords) while pointing to the same storage proxy, ensuring data is preserved across upgrades and preventing storage layout collisions.
+- **Storage.sol:** Holds all state variables (structs, mappings, etc.).
+- **Roles.sol:** Defines the Role enum and RBAC logic.
+- **AccessControl.sol:** Manages logic for granting, revoking, and requesting access to records.
+- **MedicalRecords.sol:** Main contract (proxy), inherits others and manages user/record logic.
 
-Key Structs: User, Record, Hospital
+**Key Functions:**
 
-Key Mappings:
+- `registerUser(string memory _name, Role _role)`
+- `savePublicKey(string memory _publicKey)`
+- `addSelfUploadedRecord(...)`
+- `addVerifiedRecord(...)`
+- `registerHospital(string memory _name)`
+- `registerProfessional(...)`
 
-mapping(address => User) public users;: Stores user data by address.
+---
 
-mapping(uint256 => Record) public records;: Stores record metadata by ID.
-
-mapping(uint256 => mapping(address => bytes)) public recordDeks;: Stores the encrypted DEK for a specific record (uint256) and grantee (address).
-
-Roles.sol: This contract defines the Role enum (Patient, Doctor, LabTechnician, etc.) and provides internal functions and modifiers for role-based access control, such as _hasRole and onlyRole(Role).
-
-AccessControl.sol: Inherits from Storage and Roles. This contract manages all logic related to granting, revoking, and requesting access to records.
-
-Key Functions:
-
-grantRecordAccess(uint256 _recordId, address _grantee, bytes memory _encryptedDek): Patient-only function to grant access.
-
-revokeRecordAccess(uint256 _recordId, address _grantee): Patient-only function to revoke access.
-
-requestRecordAccess(uint256 _recordId, address _patient): Professional-only function to request access, emitting an AccessRequested event.
-
-MedicalRecords.sol: This is the main, external-facing contract that serves as the UUPS proxy entry point. It inherits from AccessControl and contains all user and record management logic.
-
-Key Functions:
-
-registerUser(string memory _name, Role _role): Allows a new user to register.
-
-savePublicKey(string memory _publicKey): Allows a registered user to save their ECDH public key.
-
-addSelfUploadedRecord(...): Patient-only function to add a new record.
-
-addVerifiedRecord(...): Professional-only function to add a record (e.g., a lab result) associated with a patient.
-
-registerHospital(string memory _name): SuperAdmin-only function (called via backend relayer).
-
-registerProfessional(...): HospitalAdmin-only function (called via backend relayer).
-
-User Roles & Permissions
+## User Roles & Permissions
 
 PRISM's smart contracts enforce a strict set of permissions based on user roles.
 
-Patient:
+- **Patient:**  
+  Register, save public key, upload records, grant/revoke access.
+- **Professional (Doctor, LabTechnician):**  
+  Register, save public key, request access, upload verified records.
+- **HospitalAdmin:**  
+  All professional permissions plus register/revoke professionals.
+- **SuperAdmin:**  
+  Register/verify/revoke hospitals.
 
-registerUser as a Patient.
+---
 
-savePublicKey to enable receiving shared records.
+## Technology Stack
 
-addSelfUploadedRecord for personal health records.
+| Component    | Technology                | Purpose                                         |
+|--------------|--------------------------|-------------------------------------------------|
+| Blockchain   | Solidity, Hardhat, OZ    | Smart contracts, upgradeability                 |
+| Frontend     | React, Next.js, Tailwind | UI, routing, styling                            |
+| Web3 (Client)| Ethers.js, Web3Auth      | Wallet connection, contract interaction         |
+| Backend      | Node.js, Express.js      | REST API, WebSocket, admin relayer              |
+| Indexer      | Ethers.js, MongoDB       | Event listening, fast queries                   |
+| Database     | MongoDB, Mongoose        | Off-chain data storage                          |
+| File Storage | IPFS (Pinata)            | Decentralized encrypted file storage            |
+| Cryptography | WebCrypto API            | In-browser encryption/decryption                |
 
-grantRecordAccess to share any of their records with any address.
+---
 
-revokeRecordAccess to remove access from a grantee.
+## Encryption & Data Flow (Detailed)
 
-Professional (Doctor, LabTechnician):
+All encryption and decryption happens on the client-side.
 
-registerUser as a Doctor, LabTechnician, etc.
+### 1. User Onboarding & Key Generation
 
-savePublicKey to enable receiving shared records.
+- User logs in via Web3Auth.
+- Registers on-chain if not already.
+- Generates ECDH (P-256) key pair if needed.
+- Public key saved on-chain; private key encrypted with password and stored locally.
 
-requestRecordAccess to ask a patient for access to a record.
+### 2. Patient: Uploading a Record
 
-addVerifiedRecord to upload an official record (like a lab report or diagnosis) directly to a patient's profile.
+- Patient selects file.
+- Generates random symmetric key (DEK).
+- Encrypts file with AES-GCM.
+- Uploads encrypted file to IPFS.
+- Encrypts DEK with their own public key (self-wrap).
+- Submits transaction with metadata and self-encrypted DEK.
 
-HospitalAdmin:
+### 3. Patient: Sharing a Record
 
-All permissions of a Professional.
+- Doctor requests access (on-chain event).
+- Patient receives notification.
+- Patient decrypts DEK, re-encrypts for Doctor using ECDH.
+- Submits grant transaction with new encrypted DEK for Doctor.
 
-registerProfessional: Registers a new professional and assigns them to their hospital. This action is verified on-chain.
+### 4. Grantee: Accessing a Record
 
-revokeProfessional: De-lists a professional from their hospital.
+- Doctor fetches record metadata and encrypted DEK.
+- Decrypts DEK with their private key.
+- Fetches encrypted file from IPFS.
+- Decrypts file and views it in browser.
 
-(Note: These admin actions are typically performed via the backend API to use the Admin Gas Abstraction feature).
+---
 
-SuperAdmin:
+## Project Structure
 
-registerHospital: Registers a new, unverified hospital.
-
-verifyHospital: Verifies a hospital, allowing its admins to register professionals.
-
-revokeHospital: Revokes a hospital's verification status.
-
-(Note: These admin actions are performed via the backend API).
-
-Technology Stack
-
-Component
-
-Technology
-
-Purpose
-
-Blockchain
-
-Solidity, Hardhat, OpenZeppelin
-
-Smart contract development, testing, deployment, and upgradeability.
-
-Frontend
-
-React, Next.js, Tailwind CSS
-
-User interface and component-based architecture.
-
-Web3 (Client)
-
-Ethers.js, Web3Auth
-
-Wallet connection, contract interaction, and user-friendly social logins.
-
-Backend
-
-Node.js, Express.js
-
-REST API server, WebSocket server, and admin transaction relayer.
-
-Indexer
-
-Ethers.js (listener), MongoDB
-
-Subscribes to chain events and stores data in a queryable database.
-
-Database
-
-MongoDB, Mongoose
-
-Off-chain database for indexed event data, enabling fast queries.
-
-File Storage
-
-IPFS (via Pinata)
-
-Decentralized storage for all encrypted medical files.
-
-Cryptography
-
-WebCrypto API (AES-GCM, ECDH)
-
-In-browser end-to-end encryption and key management.
-
-Encryption & Data Flow (Detailed)
-
-This is the core privacy mechanism of PRISM. All encryption and decryption happens on the client-side.
-
-1. User Onboarding & Key Generation
-
-Login: A new user (Patient or Professional) logs in using Web3Auth.
-
-Registration: The frontend checks the contract if the user is registered. If not, the user signs a registerUser transaction.
-
-Key Pair Generation: The frontend checks if the user has a public key saved on-chain.
-
-If not, crypto.js generates a new ECDH (P-256) asymmetric key pair.
-
-The Public Key is saved on-chain by the user in their User struct via savePublicKey.
-
-The Private Key is encrypted with a key derived from the user's password (prompted via a modal) and stored in localStorage.
-
-2. Patient: Uploading a Record
-
-File Selection: Patient selects a file to upload.
-
-Symmetric Key (DEK) Generation: The frontend generates a new, random 32-byte symmetric key, known as the Data Encryption Key (DEK).
-
-File Encryption: The file's contents are encrypted using AES-GCM with this DEK.
-
-IPFS Upload: The encrypted file blob is uploaded to IPFS (via Pinata). The application receives an ipfsHash (CID).
-
-DEK Encryption (Self-Wrap): The frontend fetches the Patient's own Public Key from the contract. It then uses ECDH (Patient Private Key + Patient Public Key) to derive a shared secret, which is used to encrypt the DEK.
-
-Transaction: The Patient signs and sends the addSelfUploadedRecord transaction, which stores the ipfsHash, title, category, and the self-encrypted DEK on-chain.
-
-3. Patient: Sharing a Record
-
-This flow describes how a Patient grants access to a Doctor (Grantee).
-
-Request: A Doctor sends a requestRecordAccess transaction. The contract emits an AccessRequested event.
-
-Notification: The backend indexer catches this event and pushes a notification to the Patient via WebSocket.
-
-Patient Approval: The Patient sees the request in their dashboard and clicks "Approve".
-
-Client-Side "Proxy Re-Encryption": This is the magic. The Patient's frontend executes the following:
-a.  Fetches the record's self-encrypted DEK from the contract.
-b.  Loads the Patient's Private Key from localStorage (decrypting it with their password).
-c.  Decrypts the self-encrypted DEK to get the plaintext DEK.
-d.  Fetches the Doctor's Public Key from the contract.
-e.  Uses ECDH (Patient's Private Key + Doctor's Public Key) to derive a new shared secret.
-f.  Re-encrypts the plaintext DEK using this new shared secret. This creates an encrypted DEK for the Doctor.
-
-Grant Transaction: The Patient signs and sends the grantRecordAccess transaction, passing the recordId, the Doctor's address, and the newly-encrypted DEK for the Doctor.
-
-State Change: The smart contract saves this new encrypted DEK in the recordDeks[recordId][doctorAddress] mapping and emits an AccessGranted event.
-
-4. Grantee: Accessing a Record
-
-Data Fetch: The Doctor's frontend queries the backend API to get a list of records they have been granted access to.
-
-Select Record: The Doctor clicks "View" on a record.
-
-Fetch Data: The frontend fetches the record's ipfsHash (from the API or contract).
-
-Fetch Encrypted DEK: The frontend calls the contract's recordDeks mapping to get the encrypted DEK specific to them: recordDeks[recordId][myAddress].
-
-Decrypt DEK: The Doctor's frontend loads their Private Key from localStorage (decrypting with their password) and uses it to decrypt the fetched DEK, retrieving the plaintext DEK.
-
-Fetch File: The frontend uses the ipfsHash to fetch the encrypted file from IPFS.
-
-Decrypt File: The frontend uses the plaintext DEK to decrypt the file's contents using AES-GCM.
-
-View: The file is displayed securely in the browser.
-
-Project Structure
-
+```
 /
 ├── backend/                # Node.js Backend (Indexer, API, Relayer)
 │   ├── src/
@@ -362,62 +190,65 @@ Project Structure
 ├── hardhat.config.js       # Hardhat configuration
 ├── next.config.mjs         # Next.js configuration
 └── package.json            # Root package.json (Frontend + Hardhat)
+```
 
+---
 
-Advantages & Limitations
+## Advantages & Limitations
 
-Advantages
+### Advantages
 
-True Data Sovereignty: The patient is the only one who can initiate the sharing process.
+- **True Data Sovereignty:** The patient is the only one who can initiate the sharing process.
+- **High Privacy:** No one (not even the PRISM platform) can read the medical data.
+- **Auditability:** All access grants and state changes are recorded immutably on the blockchain.
+- **Scalability:** The off-chain indexer and API provide a fast user experience that doesn't require constant, slow calls to the blockchain for reading data.
+- **Excellent User Experience:** Web3Auth removes the need for users to manage seed phrases. The Admin Gas Abstraction simplifies administrative workflows.
 
-High Privacy: No one (not even the PRISM platform) can read the medical data.
+### Limitations & Future Improvements
 
-Auditability: All access grants and state changes are recorded immutably on the blockchain.
+- **Security Risk: NEXT_PUBLIC_PINATA_JWT:**  
+  The current implementation (src/utils/ipfs.js) reads the Pinata JWT from a NEXT_PUBLIC_ variable, which exposes it to the browser.  
+  **FIX:** The project already contains the correct solution: `src/app/api/upload/route.js`. The frontend should be refactored to call this internal API route, which then securely uses the backend PINATA_JWT (stored as `process.env.PINATA_JWT`) to upload the file.
 
-Scalability: The off-chain indexer and API provide a fast user experience that doesn't require constant, slow calls to the blockchain for reading data.
+- **Gas Costs (User):**  
+  While admin transactions are "gasless," all transactions by Patients and Professionals (registering, uploading, granting access) still require gas fees.
 
-Excellent User Experience: Web3Auth removes the need for users to manage seed phrases. The Admin Gas Abstraction simplifies administrative workflows.
+- **Centralization Points:**  
+  The system relies on several centralized components:
+  - **Backend:** The Indexer/API is a single point of failure. If it's down, the app will be slow and degraded (though core logic remains on-chain).
+  - **Pinata:** If the Pinata gateway is down, files cannot be uploaded or accessed.
+  - **Web3Auth:** Relies on Web3Auth's infrastructure for login.
 
-Limitations & Future Improvements
+- **Key Management:**  
+  Storing the user's encrypted private key in localStorage is convenient but less secure than using a browser extension like MetaMask or a hardware wallet.
 
-Security Risk: NEXT_PUBLIC_PINATA_JWT: The current implementation (src/utils/ipfs.js) reads the Pinata JWT from a NEXT_PUBLIC_ variable, which exposes it to the browser. This is a significant security risk.
+- **Data Availability:**  
+  IPFS only guarantees storage for as long as a node (in this case, Pinata) is pinning the data. For true permanence, a solution like Arweave or Filecoin incentives would be needed.
 
-FIX: The project already contains the correct solution: src/app/api/upload/route.js. The frontend should be refactored to call this internal API route, which then securely uses the backend PINATA_JWT (stored as process.env.PINATA_JWT) to upload the file.
+---
 
-Gas Costs (User): While admin transactions are "gasless," all transactions by Patients and Professionals (registering, uploading, granting access) still require gas fees. This is not a fully gasless system for all users.
+## Environment Variables & Configuration
 
-Centralization Points: The system relies on several centralized components:
-
-Backend: The Indexer/API is a single point ofFailure. If it's down, the app will be slow and degraded (though core logic remains on-chain).
-
-Pinata: If the Pinata gateway is down, files cannot be uploaded or accessed.
-
-Web3Auth: Relies on Web3Auth's infrastructure for login.
-
-Key Management: Storing the user's encrypted private key in localStorage is convenient but less secure than using a browser extension like MetaMask or a hardware wallet.
-
-Data Availability: IPFS only guarantees storage for as long as a node (in this case, Pinata) is pinning the data. For true permanence, a solution like Arweave or Filecoin incentives would be needed.
-
-Environment Variables & Configuration
-
-Frontend (.env.local)
+### Frontend (`.env.local`)
 
 Create this file in the root directory.
 
+```env
 # Web3Auth Client ID for social/email login
 NEXT_PUBLIC_WEB3AUTH_CLIENT_ID="YOUR_WEB3AUTH_CLIENT_ID"
 
 # Pinata JWT for uploading files to IPFS
 # WARNING: This is exposed to the client. See "Limitations & Future Improvements"
 NEXT_PUBLIC_PINATA_JWT="YOUR_PINATA_JWT_KEY"
+```
 
+### Backend (`backend/.env`)
 
-Backend (backend/.env)
+Create this file in the `/backend` directory. `CONTRACT_ADDRESS` and `PROVIDER_URL` will be added automatically by the deploy script.
 
-Create this file in the /backend directory. CONTRACT_ADDRESS and PROVIDER_URL will be added automatically by the deploy script.
-
+```env
 # RPC URL for the blockchain network
-PROVIDER_URL="[http://127.0.0.1:8545](http://127.0.0.1:8545)"
+PROVIDER_URL="http://127.0.0.1:8545"
 
 # Deployed contract address (added by deploy script)
 CONTRACT_ADDRESS="0x..."
@@ -429,20 +260,21 @@ MONGO_URI="mongodb://127.0.0.1:27017/prism_db"
 # This wallet pays for admin transactions (e.g., verifyHospital)
 # Use one of the Hardhat node's private keys for testing
 SUPER_ADMIN_PRIVATE_KEY="0x..."
+```
 
+---
 
-Local Development Setup
+## Local Development Setup
 
-Prerequisites:
+### Prerequisites
 
-Node.js (v18+ recommended)
+- Node.js (v18+ recommended)
+- NPM
+- MongoDB (running locally or a free Atlas cluster)
 
-NPM
+### Step 1: Install Dependencies (Root & Backend)
 
-MongoDB (running locally or a free Atlas cluster)
-
-Step 1: Install Dependencies (Root & Backend)
-
+```sh
 # Install root (frontend + hardhat) dependencies
 npm install
 
@@ -450,48 +282,56 @@ npm install
 cd backend
 npm install
 cd ..
+```
 
-
-Step 2: Start Local Hardhat Node (Terminal 1)
+### Step 2: Start Local Hardhat Node (Terminal 1)
 
 This starts a local blockchain, gives you 20 test accounts, and runs an RPC server at http://127.0.0.1:8545.
 
+```sh
 npx hardhat node
-
+```
 
 Keep this terminal running.
 
-Step 3: Deploy Smart Contracts (Terminal 2)
+### Step 3: Deploy Smart Contracts (Terminal 2)
 
-This script deploys the MedicalRecords contract to your local Hardhat node. It will also automatically update src/contracts/ with the ABI/address and append the CONTRACT_ADDRESS and PROVIDER_URL to backend/.env.
+This script deploys the MedicalRecords contract to your local Hardhat node. It will also automatically update `src/contracts/` with the ABI/address and append the `CONTRACT_ADDRESS` and `PROVIDER_URL` to `backend/.env`.
 
+```sh
 npx hardhat run --network localhost scripts/deploy.js
+```
 
+### Step 4: Configure Backend Environment
 
-Step 4: Configure Backend Environment
+The deploy.js script created/updated `backend/.env`.
 
-The deploy.js script created/updated backend/.env.
+Open `backend/.env` and add your `MONGO_URI` and `SUPER_ADMIN_PRIVATE_KEY`.
 
-Open backend/.env and add your MONGO_URI and SUPER_ADMIN_PRIVATE_KEY.
+For `SUPER_ADMIN_PRIVATE_KEY`, copy one of the private keys from the `npx hardhat node` output (Terminal 1).
 
-For SUPER_ADMIN_PRIVATE_KEY, copy one of the private keys from the npx hardhat node output (Terminal 1).
-
-Step 5: Start Backend Server (Terminal 2)
+### Step 5: Start Backend Server (Terminal 2)
 
 This starts the API, indexer, and WebSocket server.
 
+```sh
 cd backend
 npm run dev
-
+```
 
 You should see logs for "MongoDB connected" and "Indexer started". Keep this running.
 
-Step 6: Start Frontend Server (Terminal 3)
+### Step 6: Start Frontend Server (Terminal 3)
 
+```sh
 # From the root directory
 npm run dev
+```
 
+### Step 7: Open the App
 
-Step 7: Open the App
+Open [http://localhost:3000](http://localhost:3000) in your browser. You can now connect using Web3Auth and interact with the application running on your local blockchain.
 
-Open http://localhost:3000 in your browser. You can now connect using Web3Auth and interact with the application running on your local blockchain.
+---
+
+**For more details, see the in-code documentation and comments throughout the repository.**
