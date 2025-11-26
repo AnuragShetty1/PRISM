@@ -21,9 +21,9 @@ import {
 
 const roles = [
     { id: 0, name: 'Patient', description: 'The owner of the medical records.', icon: User, isProfessional: false },
-    { id: 'register_hospital', name: 'Register Hospital', description: 'Become a Hospital Administrator for your organization.', icon: Building, isProfessional: false },
     { id: 1, name: 'Doctor', description: 'A verified healthcare professional.', icon: Stethoscope, isProfessional: true },
     { id: 7, name: 'Lab Technician', description: 'Uploads verified lab test results.', icon: Beaker, isProfessional: true },
+    { id: 'register_hospital', name: 'Register Hospital', description: 'Become a Hospital Administrator for your organization.', icon: Building, isProfessional: false },
 ];
 
 const professionalRoles = roles.filter(r => r.isProfessional).map(r => r.id);
